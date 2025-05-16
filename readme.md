@@ -1,5 +1,5 @@
 
-# World-CURRENT (Computational Utility for Rapid Renewable Energy Network Topologies)
+# World-CURRENT (Computational Utility for Rapid Robust Energy Network Topologies)
 
 `world-current.py` is a data-collection and model-generation tool.
 
