@@ -1,0 +1,12 @@
+data
+cache
+target
+bin
+obj
+env
+out
+report
+*.exe
+*.dll
+__pycache__
+*.pyc
