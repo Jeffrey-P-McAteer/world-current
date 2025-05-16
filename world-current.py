@@ -54,7 +54,9 @@ if __name__ == '__main__':
   with open(sys.argv[1], 'r') as fd:
     config = toml.loads(fd.read())
 
-  print(f'config = {config}')
+  print('=' * 18, ' CONFIG ', '=' * 18)
+  print(f'{toml.dumps(config)}')
+  print()
 
 
 
