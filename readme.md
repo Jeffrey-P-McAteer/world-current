@@ -38,7 +38,10 @@ POLYGON(-82.9657830472 7.2205414901, -77.2425664944 9.61161001224, -77.142566494
 # Download a .zip from https://datasets.wri.org/datasets/global-power-plant-database and set this to point to the .csv
 path_to_global_power_plant_database = "./path/to/global_power_plant_database.csv"
 
-# Specify an output file + details
+## when specified these cause the progam to output visuals for each step
+
+# step1_map = '/tmp/step1-map.png'
+# step2_facility_chips_folder = '/tmp'
 
 ```
 

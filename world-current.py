@@ -99,6 +99,7 @@ Usage: uv run world-current.py ./path/to/config.toml
 config.toml contains configuration like the following:
 
 ```
+
 model_name = "Your Model's Name"
 
 # At exactly one of the region definitions below must be given; if a file or layer of data is specified, ALL contents
@@ -120,9 +121,10 @@ POLYGON(-82.9657830472 7.2205414901, -77.2425664944 9.61161001224, -77.142566494
 # Download a .zip from https://datasets.wri.org/datasets/global-power-plant-database and set this to point to the .csv
 path_to_global_power_plant_database = "./path/to/global_power_plant_database.csv"
 
-# Specify an output file + details
+## when specified these cause the progam to output visuals for each step
 
-
+# step1_map = '/tmp/step1-map.png'
+# step2_facility_chips_folder = '/tmp'
 ```
 
 '''.strip())
@@ -225,13 +227,6 @@ if __name__ == '__main__':
     image = location_chipper.get_1km_chip_image(
       get_lonx_from_dict(p), get_laty_from_dict(p)
     )
-    drawable = PIL.ImageDraw.Draw(image)
-    so_funcs.draw_text_with_border(
-      drawable, (2, 2),
-      f'{json.dumps(p, indent=2)}',
-      font,
-      '#ffffff',
-    )
     power_plant_images[i] = image
 
   threads = []
@@ -241,11 +236,27 @@ if __name__ == '__main__':
     threads.append(t)
   for t in threads:
     t.join()
-  for i, image in enumerate(power_plant_images):
-    out_png = f'/tmp/{i}.png'
-    image.save(out_png)
-    print(f'Output {out_png}')
-  print(f'Done chipping!')
+
+  step2_facility_chips_folder = config.get('step2_facility_chips_folder', None)
+  if not step2_facility_chips_folder is None and os.path.exists(os.path.dirname(step2_facility_chips_folder)):
+    os.makedirs(step2_facility_chips_folder, exist_ok=True)
+    for i, image in enumerate(power_plant_images):
+      out_png = os.path.join(step2_facility_chips_folder, f'{i}.png')
+      labeled_image = image.copy()
+      drawable = PIL.ImageDraw.Draw(labeled_image)
+      so_funcs.draw_text_with_border(
+        drawable, (2, 2),
+        f'{json.dumps(region_power_plants[i], indent=2)}',
+        font,
+        '#ffffff',
+      )
+      labeled_image.save(out_png)
+      print(f'Output {out_png}')
+  else:
+    print(f'Did not find a key step2_facility_chips_folder in config, skipping chips preview')
+  print()
+
+  print(f'We now have {len(power_plant_images):,} images matching to our {len(region_power_plants):,} facilities')
 
 
 
