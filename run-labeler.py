@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     folder_of_images = sys.argv[1]
     label_sw_git_url = 'https://github.com/wkentaro/labelme'
-    label_out_folder = os.path.join(os.path.dirname(folder_of_images), os.path.basename(folder_of_images)+'-label-output')
+    label_out_folder = os.path.join(os.path.dirname(folder_of_images), os.path.basename(folder_of_images).replace('/', '').replace('\\', '')+'-label-output')
 
     env = dict(os.environ)
     env['PYTHONPATH'] = os.pathsep.join(sys.path)
