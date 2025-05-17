@@ -112,5 +112,9 @@ if __name__ == "__main__":
     print(f'have {len(all_classes)} labeled classes, converting to YOLOv8 format and placing training data in {yolov8_train_folder}')
     os.makedirs(yolov8_train_folder, exist_ok=True)
     convert_labelme_to_yolo(label_out_folder, yolov8_train_folder, all_classes)
+    print()
+    print(f'Next step is to run "uv run run-yolo-training.py {yolov8_train_folder}"')
+    print()
+
 
 
