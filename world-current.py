@@ -278,7 +278,7 @@ if __name__ == '__main__':
       image.save(out_png)
       print(f'Output {out_png}')
 
-    cmd = ['uv', 'run', os.path.join(os.path.dirname(__file__), 'run-labelimg.py'), training_images_folder]
+    cmd = ['uv', 'run', os.path.join(os.path.dirname(__file__), 'run-labeler.py'), training_images_folder]
     print(f'> {" ".join(cmd)}')
     subprocess.run(cmd, check=True)
     sys.exit(1)
