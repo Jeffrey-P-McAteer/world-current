@@ -8,6 +8,8 @@
 #   "Pillow",
 #   "shapely",
 #   "requests",
+#   "ultralytics",
+#   "numpy"
 # ]
 # ///
 
@@ -31,6 +33,9 @@ import PIL.Image
 import shapely
 import shapely.geometry
 import shapely.wkt
+
+import numpy
+import ultralytics
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -166,6 +171,7 @@ if __name__ == '__main__':
   print(f'Given {len(global_power_plants_list):,} power plants recorded globally, {len(region_power_plants):,} fall within selected region')
   #print(f'region_power_plants = {json.dumps(region_power_plants, indent=2)}')
 
+  m_zoom = so_funcs.calculate_zoom(*bbox, MAP_W_PX, MAP_H_PX) # we use this in several locations, so generate it once
 
   step1_map_png_path = config.get('step1_map', None)
   print()
@@ -185,7 +191,6 @@ if __name__ == '__main__':
       )
       m.add_marker(marker)
 
-    m_zoom = so_funcs.calculate_zoom(*bbox, MAP_W_PX, MAP_H_PX);
     image_m = m.render(
       zoom=m_zoom,
       center=so_funcs.center_of_bbox(*bbox)
@@ -291,9 +296,66 @@ if __name__ == '__main__':
       print(f'Please go set path_to_tower_model_file to the .pt file we just created in your {config_file}!')
       sys.exit(1)
 
+
   print(f'Loading {path_to_tower_model_file} and using it to find tower positions in imagery...')
-  print(f'# TODO')
-  sys.exit(1)
+
+  yolo_model = ultralytics.YOLO(path_to_tower_model_file)
+
+  step3_tower_following_folder = config.get('step3_tower_following_folder', None)
+  if not step3_tower_following_folder is None:
+    print(f'Writing tower-following results to {step3_tower_following_folder}/{{i}}/{{j}}.png')
+    font = so_funcs.get_default_ttf_font(18)
+    power_plant_images_numpy = [numpy.array(img) for img in power_plant_images]
+    for i, image_result in enumerate( list(yolo_model(power_plant_images_numpy)) ):
+      i_folder = os.path.join(step3_tower_following_folder, f'{i}')
+      os.makedirs(i_folder, exist_ok=True)
+      p_img = power_plant_images[i]
+      p = region_power_plants[i]
+      p_pos = (get_lonx_from_dict(p), get_laty_from_dict(p))
+      p_lonx, p_laty = p_pos
+
+      furthest_from_center_pos = p_pos
+      furthest_from_center_original_px = (0,0)
+      for tower_j, box in enumerate(image_result.boxes):
+        cls = int(box.cls[0])  # class index
+        label = yolo_model.names[cls]  # class name
+        xyxy = box.xyxy[0].tolist()  # bounding box coordinates
+        conf = float(box.conf[0])  # confidence score
+
+        box_pixels_center = so_funcs.center_of_bbox(*xyxy)
+        box_gis_center = so_funcs.pixel_to_latlon(
+          box_pixels_center[0], box_pixels_center[1],
+          MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
+        )
+
+        if so_funcs.pt_dist(box_gis_center, p_pos) > so_funcs.pt_dist(furthest_from_center_pos, p_pos):
+          furthest_from_center_pos = box_gis_center
+          furthest_from_center_original_px = box_pixels_center
+
+      # We found the furthest tower, label & return for now.
+      furthest_from_center_pixels = so_funcs.latlon_to_pixel(
+        furthest_from_center_pos[1], furthest_from_center_pos[0],
+        MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
+      )
+
+      out_png = os.path.join(i_folder, 'debug.png')
+      labeled_image = p_img.copy()
+      drawable = PIL.ImageDraw.Draw(labeled_image)
+      print(f'furthest_from_center_original_px = {furthest_from_center_original_px}')
+      so_funcs.draw_text_with_border(
+        drawable, furthest_from_center_original_px,
+        f'< {furthest_from_center_pos} is furthest',
+        font,
+        '#ffffff',
+      )
+      labeled_image.save(out_png)
+      print(f'Output {out_png}')
+
+
+
+  else:
+    print(f'TODO use research w/ step3_tower_following_folder output to do the same but w/o intermediate outputs')
+    sys.exit(1)
 
 
 

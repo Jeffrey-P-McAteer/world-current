@@ -13,6 +13,70 @@ import shapely
 import shapely.geometry
 import shapely.wkt
 
+def pt_dist(p1, p2):
+    return math.sqrt(
+        ((p1[0] - p2[0])**2.0) + ((p1[1] - p2[1])**2.0)
+    )
+
+def pixel_to_latlon(x, y, image_width, image_height, zoom, center_lat, center_lon):
+    TILE_SIZE = 256
+
+    # Convert center lat/lon to pixel coordinates at this zoom level
+    def latlon_to_pixels(lat, lon, zoom):
+        scale = TILE_SIZE * 2**zoom
+        x_pixel = (lon + 180.0) / 360.0 * scale
+        sin_lat = math.sin(math.radians(lat))
+        y_pixel = (
+            0.5 - math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * math.pi)
+        ) * scale
+        return x_pixel, y_pixel
+
+    # Convert pixel coordinates to lat/lon at this zoom level
+    def pixels_to_latlon(px, py, zoom):
+        scale = TILE_SIZE * 2**zoom
+        lon = px / scale * 360.0 - 180.0
+        n = math.pi - 2.0 * math.pi * py / scale
+        lat = math.degrees(math.atan(math.sinh(n)))
+        return lat, lon
+
+    # Center pixel position in global coordinates
+    center_px, center_py = latlon_to_pixels(center_lat, center_lon, zoom)
+
+    # Offset from image center to this pixel
+    dx = x - image_width / 2
+    dy = y - image_height / 2
+
+    # Global pixel coordinates of the input pixel
+    target_px = center_px + dx
+    target_py = center_py + dy
+
+    # Convert back to lat/lon
+    return pixels_to_latlon(target_px, target_py, zoom)
+
+def latlon_to_pixel(lat, lon, image_width, image_height, zoom, center_lat, center_lon):
+    TILE_SIZE = 256
+
+    # Convert lat/lon to global pixel coordinates at a given zoom level
+    def latlon_to_global_px(lat, lon, zoom):
+        scale = TILE_SIZE * 2**zoom
+        x = (lon + 180.0) / 360.0 * scale
+        sin_lat = math.sin(math.radians(lat))
+        y = (0.5 - math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * math.pi)) * scale
+        return x, y
+
+    # Get global pixel coordinates of center and target lat/lon
+    center_px, center_py = latlon_to_global_px(center_lat, center_lon, zoom)
+    target_px, target_py = latlon_to_global_px(lat, lon, zoom)
+
+    # Calculate pixel position relative to image center
+    dx = target_px - center_px
+    dy = target_py - center_py
+
+    pixel_x = image_width / 2 + dx
+    pixel_y = image_height / 2 + dy
+
+    return pixel_x, pixel_y
+
 def brightness(color):
     # Convert color name or hex to RGB tuple
     rgb = PIL.ImageColor.getrgb(color)
