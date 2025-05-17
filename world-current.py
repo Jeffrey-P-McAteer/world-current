@@ -29,6 +29,8 @@ import so_funcs
 
 cache = diskcache.Cache(platformdirs.user_cache_dir('world-current'))
 CACHE_EXPIRE_S = 60 * 60
+MAP_W_PX = 1920
+MAP_H_PX = 1080
 
 def lcache(key, expensive_call, expire=CACHE_EXPIRE_S):
     if key in os.environ.get('IGNORE_CACHES', ''):
@@ -40,12 +42,28 @@ def lcache(key, expensive_call, expire=CACHE_EXPIRE_S):
     cache.set(key, value, expire=expire)
     return value
 
-def create_map(bbox, points, out_file):
-    #m = StaticMap(1920, 1080, url_template='http://a.tile.openstreetmap.org/{z}/{x}/{y}.png')
-    #m = StaticMap(1920, 1080, url_template='https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
-    m = StaticMap(1920, 1080, url_template='https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}')
+def get_lat_from_dict(d):
+  return float(d.get('latitude', d.get('lat', d.get('y', None))))
+
+def get_lon_from_dict(d):
+  return float(d.get('longitude', d.get('lon', d.get('x', None))))
+
+def color_from_dict(d):
+  if 'color' in d:
+    return d['color']
+  return 'grey'
+
+def size_from_dict(d):
+  if 'size' in d:
+    return int(d['size'])
+  return 12
+
+def create_map(bbox, points):
+    #m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template='http://a.tile.openstreetmap.org/{z}/{x}/{y}.png')
+    m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template='https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
+    #m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template='https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}')
     for p in points:
-      marker = CircleMarker((point["lon"], point["lat"]), point["color"], int(point.get('size', 12)) )
+      marker = staticmap.CircleMarker((get_lon_from_dict(p), get_lat_from_dict(p) ), color_from_dict(p), size_from_dict(p) )
       m.add_marker(marker)
 
     return m
@@ -119,9 +137,9 @@ if __name__ == '__main__':
   ]
   print(f'Given {len(global_power_plants_list):,} power plants recorded globally, {len(region_power_plants):,} fall within selected region')
 
-  #print(f'region_power_plants = {region_power_plants}')
-
-
+  m = create_map(bbox, region_power_plants)
+  image = m.render(zoom=so_funcs.calculate_zoom(*bbox, MAP_W_PX, MAP_H_PX), center=so_funcs.center_of_bbox(*bbox))
+  image.save('/tmp/m.png')
 
 
 

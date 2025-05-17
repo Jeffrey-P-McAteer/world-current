@@ -2,6 +2,8 @@
 # Designed to be imported by world-current, does not run stand-alone!
 
 import csv
+import math
+
 
 import shapely
 import shapely.geometry
@@ -58,3 +60,31 @@ def load_geometries(input_data):
         bounding_box = None
 
     return polygons, bounding_box
+
+def calculate_zoom(min_lon, min_lat, max_lon, max_lat, width_px, height_px):
+    """Estimate zoom level that fits the bounding box in the given pixel dimensions."""
+    WORLD_DIM = {'height': 256, 'width': 256}
+    ZOOM_MAX = 19
+
+    def lat_rad(lat):
+        sin = math.sin(lat * math.pi / 180)
+        rad_x2 = math.log((1 + sin) / (1 - sin)) / 2
+        return max(min(rad_x2, math.pi), -math.pi) / 2
+
+    def zoom(map_px, world_px, fraction):
+        return math.floor(math.log(map_px / world_px / fraction) / math.log(2))
+
+    lat_fraction = (lat_rad(max_lat) - lat_rad(min_lat)) / math.pi
+    lon_diff = max_lon - min_lon
+    lon_fraction = ((lon_diff + 360) if lon_diff < 0 else lon_diff) / 360
+
+    lat_zoom = zoom(height_px, WORLD_DIM['height'], lat_fraction)
+    lon_zoom = zoom(width_px, WORLD_DIM['width'], lon_fraction)
+
+    return min(lat_zoom, lon_zoom, ZOOM_MAX)
+
+def center_of_bbox(minx, miny, maxx, maxy):
+    return float(minx + maxx) / 2.0, float(miny + maxy) / 2.0
+
+
+
