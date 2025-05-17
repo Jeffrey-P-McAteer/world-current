@@ -19,6 +19,7 @@ import random
 import json
 import math
 import threading
+import subprocess
 
 import toml
 import diskcache
@@ -142,7 +143,8 @@ if __name__ == '__main__':
   if not os.path.exists(sys.argv[1]):
     die(f'The file {sys.argv[1]} does not exist! Please select a configuration file which exists and try again.')
 
-  with open(sys.argv[1], 'r') as fd:
+  config_file = sys.argv[1]
+  with open(config_file, 'r') as fd:
     config = toml.loads(fd.read())
 
   print('=' * 18, ' CONFIG ', '=' * 18)
@@ -257,6 +259,34 @@ if __name__ == '__main__':
   print()
 
   print(f'We now have {len(power_plant_images):,} images matching to our {len(region_power_plants):,} facilities')
+
+  path_to_tower_model_file = config.get('path_to_tower_model_file', None)
+  if path_to_tower_model_file is not None and not os.path.exists(path_to_tower_model_file):
+    path_to_tower_model_file = None
+  if path_to_tower_model_file is None:
+    training_images_folder = os.path.join(os.path.dirname(config_file), 'training-images')
+    print(f'Either no path_to_tower_model_file key specified or the file does not exist; we are placing chips')
+    print(f'at {training_images_folder} and templating out a training environment.')
+    os.makedirs(training_images_folder, exist_ok=True)
+    for i, image in enumerate(power_plant_images):
+      out_png = os.path.join(training_images_folder, f'{i}.png')
+      if os.path.exists(out_png):
+        age_s = time.time() - os.path.getmtime(out_png)
+        if age_s < 30 * 50:
+          print(f'We already have output {out_png} {int(age_s)} seconds ago, skipping')
+          continue
+      image.save(out_png)
+      print(f'Output {out_png}')
+
+    cmd = ['uv', 'run', os.path.join(os.path.dirname(__file__), 'run-labelimg.py'), training_images_folder]
+    print(f'> {" ".join(cmd)}')
+    subprocess.run(cmd, check=True)
+    sys.exit(1)
+
+  else:
+    print(f'Loading {path_to_tower_model_file} and using it to find tower positions in imagery...')
+    print(f'# TODO')
+    sys.exit(1)
 
 
 
