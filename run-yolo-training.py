@@ -64,3 +64,6 @@ names: {json.dumps(all_classes)}
       'imgsz=1694',
     ], check=True, env=env)
 
+    print(f'Done!')
+    print(f'See output model file {yolov8_model_file}')
+
