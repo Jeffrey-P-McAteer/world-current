@@ -217,7 +217,7 @@ if __name__ == '__main__':
     print(f'Did not find a key step1_map in config, skipping map preview')
   print()
 
-  font = so_funcs.get_default_ttf_font(18)
+  font = so_funcs.get_default_ttf_font(16)
 
   power_plant_images = [None for p in region_power_plants]
 
