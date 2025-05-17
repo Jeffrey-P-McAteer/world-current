@@ -34,6 +34,7 @@ sys.path.append(os.path.dirname(__file__))
 
 import so_funcs
 import analytic_tile_server
+import location_chipper
 
 cache = diskcache.Cache(platformdirs.user_cache_dir('world-current'))
 CACHE_EXPIRE_S = 60 * 60
@@ -201,12 +202,6 @@ if __name__ == '__main__':
         xy_coord = (draw_x + x_offset, draw_y + y_offset)
         print(f'Notice: Moved {e_source} label to offset {xy_coord} to avoid label collision')
       taken_xy_coords.append(xy_coord)
-      #drawable_m.text(
-      #  xy_coord,
-      #  e_source,
-      #  fill=color_from_dict(p, default_value=color_of_energy_source(energy_source(p))),
-      #  font=font
-      #)
       so_funcs.draw_text_with_border(
         drawable_m, xy_coord, e_source, font,
         color_from_dict(p, default_value=color_of_energy_source(energy_source(p)))
@@ -220,6 +215,23 @@ if __name__ == '__main__':
   else:
     print(f'Did not find a key step1_map in config, skipping map preview')
   print()
+
+  font = so_funcs.get_default_ttf_font(18)
+  for i, p in enumerate(region_power_plants):
+    out_png = f'/tmp/{i}.png'
+    image = location_chipper.get_1km_chip_image(
+      get_lonx_from_dict(p), get_laty_from_dict(p)
+    )
+    drawable = PIL.ImageDraw.Draw(image)
+    so_funcs.draw_text_with_border(
+      drawable, (2, 2),
+      f'{json.dumps(p, indent=2)}',
+      font,
+      '#ffffff',
+    )
+    image.save(out_png)
+    print(f'Output {out_png}')
+
 
 
 
