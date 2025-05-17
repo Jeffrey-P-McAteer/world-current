@@ -11,6 +11,8 @@ import requests
 import io
 import re
 
+# USE_OVERLAY = True
+USE_OVERLAY = False
 
 # Esri tile sources
 IMAGERY_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -38,23 +40,29 @@ class TileHandler(BaseHTTPRequestHandler):
         try:
             # Fetch imagery tile
             img_url = IMAGERY_URL.format(z=z, y=y, x=x)
-            lbl_url = LABELS_URL.format(z=z, y=y, x=x)
+            if USE_OVERLAY:
+              lbl_url = LABELS_URL.format(z=z, y=y, x=x)
 
             img_bytes = at_d_cache.get(img_url, None)
             if img_bytes is None:
               img_bytes = requests.get(img_url).content
               at_d_cache.set(img_url, img_bytes, expire=IMAGERY_EXPIRE_SECONDS)
 
-            lbl_bytes = at_d_cache.get(lbl_url, None)
-            if lbl_bytes is None:
-              lbl_bytes = requests.get(lbl_url).content
-              at_d_cache.set(lbl_url, lbl_bytes, expire=IMAGERY_EXPIRE_SECONDS)
+            if USE_OVERLAY:
+              lbl_bytes = at_d_cache.get(lbl_url, None)
+              if lbl_bytes is None:
+                lbl_bytes = requests.get(lbl_url).content
+                at_d_cache.set(lbl_url, lbl_bytes, expire=IMAGERY_EXPIRE_SECONDS)
 
             base_img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-            overlay_img = Image.open(io.BytesIO(lbl_bytes)).convert("RGBA")
+            if USE_OVERLAY:
+              overlay_img = Image.open(io.BytesIO(lbl_bytes)).convert("RGBA")
 
             # Composite tiles
-            composed = Image.alpha_composite(base_img, overlay_img)
+            if USE_OVERLAY:
+              composed = Image.alpha_composite(base_img, overlay_img)
+            else:
+              composed = base_img
 
             # Respond with PNG
             img_bytes = io.BytesIO()

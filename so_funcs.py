@@ -3,11 +3,69 @@
 
 import csv
 import math
+import os
+import sys
 
-
+import PIL
+import PIL.ImageFont
+import PIL.ImageColor
 import shapely
 import shapely.geometry
 import shapely.wkt
+
+def brightness(color):
+    # Convert color name or hex to RGB tuple
+    rgb = PIL.ImageColor.getrgb(color)
+    r, g, b = rgb
+
+    # Calculate brightness using luminance formula (0-255 scale)
+    # Formula from WCAG: Y = 0.2126*R + 0.7152*G + 0.0722*B
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+def brightness_difference(color1, color2):
+    b1 = brightness(color1)
+    b2 = brightness(color2)
+
+    diff = abs(b1 - b2)
+
+    # Normalize to range 0..1 (max difference is between 0 and 255)
+    return diff / 255.0
+
+def draw_text_with_border(draw, position, text, font, text_color):
+    x, y = position
+    border_color = '#ffffff'
+    border_width = 1
+
+    if brightness_difference(text_color, border_color) > 0.50: # if we are FAR from white (ie big diff), add white border
+        border_color = '#ffffff'
+    else:
+        border_color = '#000000'
+
+    # Draw border by drawing the text shifted in 8 directions around the center
+    for dx in range(-border_width, border_width + 1):
+        for dy in range(-border_width, border_width + 1):
+            if dx == 0 and dy == 0:
+                continue  # Skip the center (main text)
+            draw.text((x + dx, y + dy), text, font=font, fill=border_color)
+
+    # Draw the main text
+    draw.text(position, text, font=font, fill=text_color)
+
+
+def get_default_ttf_font(size=16):
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux
+        "/usr/lib/python3.13/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf",  # Also Linux
+        "/usr/share/fonts/noto/NotoSans-Regular.ttf",
+        "/Library/Fonts/Arial.ttf",                         # macOS
+        "C:/Windows/Fonts/arial.ttf"                        # Windows
+    ]
+    for path in font_paths:
+        if os.path.exists(path):
+            return PIL.ImageFont.truetype(path, size)
+    print("Warning: No TTF font found. Using default bitmap font.")
+    return PIL.ImageFont.load_default()
+
 
 def cvs2dicts(csv_path):
     with open(csv_path, newline='', encoding='utf-8') as csvfile:

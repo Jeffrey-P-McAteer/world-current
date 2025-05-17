@@ -16,12 +16,16 @@ import sys
 import csv
 import time
 import random
+import json
+import math
 
 import toml
 import diskcache
 import platformdirs
 import staticmap
 import PIL
+import PIL.ImageFont
+import PIL.Image
 import shapely
 import shapely.geometry
 import shapely.wkt
@@ -46,21 +50,45 @@ def lcache(key, expensive_call, expire=CACHE_EXPIRE_S):
     cache.set(key, value, expire=expire)
     return value
 
-def get_lat_from_dict(d):
+def get_laty_from_dict(d):
   return float(d.get('latitude', d.get('lat', d.get('y', None))))
 
-def get_lon_from_dict(d):
+def get_lonx_from_dict(d):
   return float(d.get('longitude', d.get('lon', d.get('x', None))))
 
-def color_from_dict(d):
+def color_from_dict(d, default_value='grey'):
   if 'color' in d:
     return d['color']
-  return 'grey'
+  return default_value
 
 def size_from_dict(d):
   if 'size' in d:
     return int(d['size'])
   return 12
+
+def energy_source(d):
+  if 'primary_fuel' in d and len(d.get('primary_fuel', '')) > 0:
+    return d.get('primary_fuel', '').lower()
+
+  for k,v in d.items():
+    if 'hydro'.casefold() in v.casefold():
+      return 'hydro'
+
+
+  raise Exception(f'Unknown energy source from {json.dumps(d, indent=2)}')
+
+def color_of_energy_source(s):
+  if s == 'hydro':
+    return '#add8e6'
+  elif s == 'oil':
+    return '#b5651d'
+  elif s == 'coal':
+    return '#654321'
+  elif s == 'solar':
+    return '#ffea00'
+  else:
+    return 'grey'
+
 
 def print_help():
   print(f'''
@@ -115,13 +143,13 @@ if __name__ == '__main__':
 
   print('=' * 18, ' CONFIG ', '=' * 18)
   print(f'{toml.dumps(config)}')
-  print()
 
   # Step 1: Read region into a list of polygons.
   polygons, bbox = so_funcs.load_geometries(config['region'])
   b_minx, b_miny, b_maxx, b_maxy = bbox
   print(f'polygons = {polygons}')
   print(f'bbox = {bbox}')
+  print()
 
   # Step 2: Read path_to_global_power_plant_database and filter to list of generating facilities within region.
   path_to_global_power_plant_database = config['path_to_global_power_plant_database']
@@ -130,23 +158,73 @@ if __name__ == '__main__':
     p for p in global_power_plants_list if 'latitude' in p and 'longitude' in p and b_minx <= float(p['longitude']) <= b_maxx and b_miny <= float(p['latitude']) <= b_maxy
   ]
   print(f'Given {len(global_power_plants_list):,} power plants recorded globally, {len(region_power_plants):,} fall within selected region')
+  #print(f'region_power_plants = {json.dumps(region_power_plants, indent=2)}')
 
-  port = random.randint(8000, 8200)
-  t = analytic_tile_server.spawn_run_thread(cache, port)
-  time.sleep(0.1)
 
-  m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template=f'http://127.0.0.1:{port}/tile/{{z}}/{{y}}/{{x}}.png')
-  for p in region_power_plants:
-    marker = staticmap.CircleMarker((get_lon_from_dict(p), get_lat_from_dict(p) ), color_from_dict(p), size_from_dict(p) )
-    m.add_marker(marker)
+  step1_map_png_path = config.get('step1_map', None)
+  print()
+  if step1_map_png_path is not None and len(step1_map_png_path) > 0 and os.path.exists(os.path.dirname(step1_map_png_path)):
+    print(f'Outputting step1 map to {step1_map_png_path}')
 
-  image_m = m.render(
-    zoom=so_funcs.calculate_zoom(*bbox, MAP_W_PX, MAP_H_PX),
-    center=so_funcs.center_of_bbox(*bbox)
-  )
-  image_m.save('/tmp/m.png')
+    port = random.randint(8000, 8200)
+    t = analytic_tile_server.spawn_run_thread(cache, port)
+    time.sleep(0.1)
 
-  analytic_tile_server.shutdown()
+    m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template=f'http://127.0.0.1:{port}/tile/{{z}}/{{y}}/{{x}}.png')
+    for p in region_power_plants:
+      marker = staticmap.CircleMarker(
+        (get_lonx_from_dict(p), get_laty_from_dict(p) ),
+        color_from_dict(p, default_value=color_of_energy_source(energy_source(p))),
+        size_from_dict(p)
+      )
+      m.add_marker(marker)
+
+    m_zoom = so_funcs.calculate_zoom(*bbox, MAP_W_PX, MAP_H_PX);
+    image_m = m.render(
+      zoom=m_zoom,
+      center=so_funcs.center_of_bbox(*bbox)
+    )
+    # We must _manually_ draw labels ugh
+    font = so_funcs.get_default_ttf_font(18)
+    drawable_m = PIL.ImageDraw.Draw(image_m)
+    taken_xy_coords = list()
+    for p in region_power_plants:
+      e_source = energy_source(p)
+      draw_x = m._x_to_px(staticmap.staticmap._lon_to_x(get_lonx_from_dict(p), m_zoom))
+      draw_y = m._y_to_px(staticmap.staticmap._lat_to_y(get_laty_from_dict(p), m_zoom))
+      # Offset text slightly to avoid overlapping with the marker
+      x_offset = 5
+      y_offset = -10
+      xy_coord = (draw_x + x_offset, draw_y + y_offset)
+      while any(math.sqrt(((xy_coord[0] - other_x)**2.0) + ((xy_coord[1] - other_y)**2.0)) < 26.0 for other_x, other_y in taken_xy_coords):
+        y_offset += 5
+        xy_coord = (draw_x + x_offset, draw_y + y_offset)
+        print(f'Notice: Moved {e_source} label to offset {xy_coord} to avoid label collision')
+      taken_xy_coords.append(xy_coord)
+      #drawable_m.text(
+      #  xy_coord,
+      #  e_source,
+      #  fill=color_from_dict(p, default_value=color_of_energy_source(energy_source(p))),
+      #  font=font
+      #)
+      so_funcs.draw_text_with_border(
+        drawable_m, xy_coord, e_source, font,
+        color_from_dict(p, default_value=color_of_energy_source(energy_source(p)))
+      )
+      #print(f'{e_source} is being drawn at {draw_x},{draw_y}')
+
+    image_m.save(step1_map_png_path)
+
+    analytic_tile_server.shutdown()
+
+  else:
+    print(f'Did not find a key step1_map in config, skipping map preview')
+  print()
+
+
+
+
+
 
 
 
