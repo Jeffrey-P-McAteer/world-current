@@ -5,8 +5,12 @@
 
 Usage is as follows:
 
-```
+```bash
 uv run world-current.py ./path/to/config.toml
+
+# For faster number-crunching
+PYTHON_EXECUTABLE=/usr/bin/pypy3 uv run world-current.py ./data/config.toml
+
 ```
 
 `config.toml` contains all inputs to the model. If unspecified, a template like the
