@@ -218,9 +218,10 @@ if __name__ == '__main__':
   print()
 
   font = so_funcs.get_default_ttf_font(18)
+
   power_plant_images = [None for p in region_power_plants]
+
   def render_one(i, p):
-    out_png = f'/tmp/{i}.png'
     image = location_chipper.get_1km_chip_image(
       get_lonx_from_dict(p), get_laty_from_dict(p)
     )
@@ -232,8 +233,6 @@ if __name__ == '__main__':
       '#ffffff',
     )
     power_plant_images[i] = image
-    image.save(out_png)
-    print(f'Output {out_png}')
 
   threads = []
   for i, p in enumerate(region_power_plants):
@@ -242,6 +241,10 @@ if __name__ == '__main__':
     threads.append(t)
   for t in threads:
     t.join()
+  for i, image in enumerate(power_plant_images):
+    out_png = f'/tmp/{i}.png'
+    image.save(out_png)
+    print(f'Output {out_png}')
   print(f'Done chipping!')
 
 
