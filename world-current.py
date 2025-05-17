@@ -7,12 +7,15 @@
 #   "staticmap",
 #   "Pillow",
 #   "shapely",
+#   "requests",
 # ]
 # ///
 
 import os
 import sys
 import csv
+import time
+import random
 
 import toml
 import diskcache
@@ -26,6 +29,7 @@ import shapely.wkt
 sys.path.append(os.path.dirname(__file__))
 
 import so_funcs
+import analytic_tile_server
 
 cache = diskcache.Cache(platformdirs.user_cache_dir('world-current'))
 CACHE_EXPIRE_S = 60 * 60
@@ -57,16 +61,6 @@ def size_from_dict(d):
   if 'size' in d:
     return int(d['size'])
   return 12
-
-def create_map(bbox, points):
-    #m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template='http://a.tile.openstreetmap.org/{z}/{x}/{y}.png')
-    m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template='https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
-    #m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template='https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}')
-    for p in points:
-      marker = staticmap.CircleMarker((get_lon_from_dict(p), get_lat_from_dict(p) ), color_from_dict(p), size_from_dict(p) )
-      m.add_marker(marker)
-
-    return m
 
 def print_help():
   print(f'''
@@ -137,9 +131,22 @@ if __name__ == '__main__':
   ]
   print(f'Given {len(global_power_plants_list):,} power plants recorded globally, {len(region_power_plants):,} fall within selected region')
 
-  m = create_map(bbox, region_power_plants)
-  image = m.render(zoom=so_funcs.calculate_zoom(*bbox, MAP_W_PX, MAP_H_PX), center=so_funcs.center_of_bbox(*bbox))
-  image.save('/tmp/m.png')
+  port = random.randint(8000, 8200)
+  t = analytic_tile_server.spawn_run_thread(cache, port)
+  time.sleep(0.1)
+
+  m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template=f'http://127.0.0.1:{port}/tile/{{z}}/{{y}}/{{x}}.png')
+  for p in region_power_plants:
+    marker = staticmap.CircleMarker((get_lon_from_dict(p), get_lat_from_dict(p) ), color_from_dict(p), size_from_dict(p) )
+    m.add_marker(marker)
+
+  image_m = m.render(
+    zoom=so_funcs.calculate_zoom(*bbox, MAP_W_PX, MAP_H_PX),
+    center=so_funcs.center_of_bbox(*bbox)
+  )
+  image_m.save('/tmp/m.png')
+
+  analytic_tile_server.shutdown()
 
 
 
