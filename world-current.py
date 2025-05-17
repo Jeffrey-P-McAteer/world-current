@@ -107,11 +107,20 @@ if __name__ == '__main__':
 
   # Step 1: Read region into a list of polygons.
   polygons, bbox = so_funcs.load_geometries(config['region'])
+  b_minx, b_miny, b_maxx, b_maxy = bbox
   print(f'polygons = {polygons}')
   print(f'bbox = {bbox}')
 
-
   # Step 2: Read path_to_global_power_plant_database and filter to list of generating facilities within region.
+  path_to_global_power_plant_database = config['path_to_global_power_plant_database']
+  global_power_plants_list = so_funcs.cvs2dicts(path_to_global_power_plant_database)
+  region_power_plants = [
+    p for p in global_power_plants_list if 'latitude' in p and 'longitude' in p and b_minx <= float(p['longitude']) <= b_maxx and b_miny <= float(p['latitude']) <= b_maxy
+  ]
+  print(f'Given {len(global_power_plants_list):,} power plants recorded globally, {len(region_power_plants):,} fall within selected region')
+
+  #print(f'region_power_plants = {region_power_plants}')
+
 
 
 
