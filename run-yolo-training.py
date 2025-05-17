@@ -67,12 +67,13 @@ names: {json.dumps(all_classes)}
     ], check=True, env=env)
 
     newest_pt_file = None
-    for pt_file in pathlib.Path(yolo_directory).rglob('**/*.pt'):
+    for pt_file in pathlib.Path('.').rglob('**/*.pt'):
       if newest_pt_file is None:
         newest_pt_file = pt_file
       elif os.path.getmtime(pt_file) > os.path.getmtime(newest_pt_file):
         newest_pt_file = pt_file
 
+    newest_pt_file = os.path.abspath(newest_pt_file)
     print(f'Done!')
     print(f'See output model file {newest_pt_file}')
 
