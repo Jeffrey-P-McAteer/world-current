@@ -62,6 +62,7 @@ names: {json.dumps(all_classes)}
       f'data={yolov8_data_yaml_file}',
       'epochs=1000',
       'imgsz=1694',
+      'patience=500',
     ], check=True, env=env)
 
     print(f'Done!')
