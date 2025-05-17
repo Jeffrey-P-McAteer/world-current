@@ -11,6 +11,7 @@ import sys
 import os
 import shutil
 import json
+import pathlib
 
 def read_all_labelme_classes(labelme_dir):
     all_classes = set()
@@ -65,6 +66,13 @@ names: {json.dumps(all_classes)}
       'patience=500',
     ], check=True, env=env)
 
+    newest_pt_file = None
+    for pt_file in pathlib.Path(yolo_directory).rglob('**/*.pt'):
+      if newest_pt_file is None:
+        newest_pt_file = pt_file
+      elif os.path.getmtime(pt_file) > os.path.getmtime(newest_pt_file):
+        newest_pt_file = pt_file
+
     print(f'Done!')
-    print(f'See output model file {yolov8_model_file}')
+    print(f'See output model file {newest_pt_file}')
 
