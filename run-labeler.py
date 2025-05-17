@@ -14,6 +14,7 @@ import sys
 import os
 import shutil
 import json
+import random
 
 from PIL import Image
 
@@ -28,8 +29,24 @@ def read_all_labelme_classes(labelme_dir):
             all_classes.add(label)
     return list(all_classes)
 
-def convert_labelme_to_yolo(labelme_dir, output_dir, class_list):
-    os.makedirs(output_dir, exist_ok=True)
+def convert_labelme_to_yolo(labelme_dir, yolov8_output_dir, class_list):
+    if os.path.exists(yolov8_output_dir):
+        shutil.rmtree(yolov8_output_dir, ignore_errors=True)
+
+    os.makedirs(yolov8_output_dir, exist_ok=True)
+
+    yolov8_images_train = os.path.join(yolov8_output_dir, 'images', 'train')
+    yolov8_images_val = os.path.join(yolov8_output_dir, 'images', 'val')
+    yolov8_labels_train = os.path.join(yolov8_output_dir, 'labels', 'train')
+    yolov8_labels_val = os.path.join(yolov8_output_dir, 'labels', 'val')
+
+    os.makedirs(yolov8_images_train, exist_ok=True)
+    os.makedirs(yolov8_images_val, exist_ok=True)
+    os.makedirs(yolov8_labels_train, exist_ok=True)
+    os.makedirs(yolov8_labels_val, exist_ok=True)
+
+    is_validate_probability_perc = 15 # we use 15% of the inputs as validation
+
     for fname in os.listdir(labelme_dir):
         if not fname.endswith('.json'):
             continue
@@ -53,12 +70,18 @@ def convert_labelme_to_yolo(labelme_dir, output_dir, class_list):
             bh = abs(y2 - y1) / h
             yolo_lines.append(f"{cls_id} {cx} {cy} {bw} {bh}")
 
-        #label_path = os.path.join(output_dir, os.path.splitext(data['imagePath'])[0] + '.txt')
-        label_path = os.path.join(output_dir, os.path.basename(os.path.splitext(data['imagePath'])[0]) + '.txt')
+        # Do we make this a validation or a training item?
+        is_validation = random.randint(0, 100) < is_validate_probability_perc
+        if is_validation:
+            label_path = os.path.join(yolov8_labels_val, os.path.basename(os.path.splitext(data['imagePath'])[0]) + '.txt')
+            yolo_image_path = os.path.join(yolov8_images_val, os.path.basename(data['imagePath']))
+        else:
+            label_path = os.path.join(yolov8_labels_train, os.path.basename(os.path.splitext(data['imagePath'])[0]) + '.txt')
+            yolo_image_path = os.path.join(yolov8_images_train, os.path.basename(data['imagePath']))
+
         with open(label_path, 'w') as f:
             f.write('\n'.join(yolo_lines))
         # We also copy the image from image_path to
-        yolo_image_path = os.path.join(output_dir, os.path.basename(data['imagePath']))
         shutil.copy(image_path, yolo_image_path)
         print(f'Output {image_path} to {label_path} and {yolo_image_path}')
 

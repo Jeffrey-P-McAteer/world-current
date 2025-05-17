@@ -10,6 +10,18 @@ import subprocess
 import sys
 import os
 import shutil
+import json
+
+def read_all_labelme_classes(labelme_dir):
+    all_classes = set()
+    for fname in os.listdir(labelme_dir):
+        if not fname.endswith('.json'):
+            continue
+        data = json.load(open(os.path.join(labelme_dir, fname)))
+        for shape in data['shapes']:
+            label = shape['label']
+            all_classes.add(label)
+    return list(all_classes)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -17,17 +29,27 @@ if __name__ == "__main__":
         sys.exit(1)
 
     yolo_directory = sys.argv[1]
+    label_out_folder = None
+    for dirent in os.path.listdir(os.path.dirname(yolo_directory)):
+      if dirent.lower().endswith('label-output'):
+        label_out_folder = os.path.join(os.path.dirname(yolo_directory), dirent)
+        break
     yolov8_model_file = os.path.join(yolo_directory, 'yolov8n.pt')
     yolov8_data_yaml_file = os.path.join(yolo_directory, 'data.yaml')
 
+    print(f'label_out_folder = {label_out_folder}')
+    all_classes  = read_all_labelme_classes(label_out_folder)
+    print(f'all_classes = {all_classes}')
+
     with open(yolov8_data_yaml_file, 'w') as fd:
       fd.write(f'''
-train: /absolute/path/to/yolo_dataset/images/train TODO
-val: /absolute/path/to/yolo_dataset/images/val
+train: {os.path.join(yolo_directory, "images", "train")}
+val: {os.path.join(yolo_directory, "images", "val")}
 
 nc: 1
-names: ['power_pole']
+names: {json.dumps(all_classes)}
 ''')
+    print(f'Wrote {yolov8_data_yaml_file}')
 
     env = dict(os.environ)
     env['PYTHONPATH'] = os.pathsep.join(sys.path)
