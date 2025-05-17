@@ -2,15 +2,38 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "toml",
+#   "diskcache",
+#   "platformdirs",
 #
 # ]
 # ///
 
 import os
 import sys
-
+import csv
 
 import toml
+import diskcache
+import platformdirs
+
+cache = diskcache.Cache(platformdirs.user_cache_dir('world-current'))
+CACHE_EXPIRE_S = 60 * 60
+
+def lcache(key, expensive_call, expire=CACHE_EXPIRE_S):
+    if key in os.environ.get('IGNORE_CACHES', ''):
+        value = expensive_call()
+    else:
+        value = cache.get(key, None)
+    if value is None:
+        value = expensive_call()
+    cache.set(key, value, expire=expire)
+    return value
+
+def cvs2dicts(csv_path):
+    with open(csv_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        data = [row for row in reader]
+    return data
 
 def print_help():
   print(f'''
@@ -36,6 +59,10 @@ region = "./path/to/layer.geojson"
 region = """
 POLYGON(-82.9657830472 7.2205414901, -77.2425664944 9.61161001224, -77.1425664944 9.41161001224, -77.0325664944 9.11161001224, -82.9657830472 7.2205414901)
 """
+
+# Download a .zip from https://datasets.wri.org/datasets/global-power-plant-database and set this to point to the .csv
+path_to_global_power_plant_database = "./path/to/global_power_plant_database.csv"
+
 ```
 
 '''.strip())
@@ -59,6 +86,13 @@ if __name__ == '__main__':
   print('=' * 18, ' CONFIG ', '=' * 18)
   print(f'{toml.dumps(config)}')
   print()
+
+  # Step 1: Read region into a list of polygons.
+
+
+  # Step 2: Read path_to_global_power_plant_database and filter to list of generating facilities within region.
+
+
 
 
 
