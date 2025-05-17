@@ -28,12 +28,13 @@ if __name__ == "__main__":
         print(f'Usage: uv run run-yolo-training.py ./path/to/yolo-training')
         sys.exit(1)
 
-    yolo_directory = sys.argv[1]
+    yolo_directory = os.path.abspath(sys.argv[1])
     label_out_folder = None
-    for dirent in os.path.listdir(os.path.dirname(yolo_directory)):
+    for dirent in os.listdir(os.path.dirname(yolo_directory)):
       if dirent.lower().endswith('label-output'):
         label_out_folder = os.path.join(os.path.dirname(yolo_directory), dirent)
         break
+
     yolov8_model_file = os.path.join(yolo_directory, 'yolov8n.pt')
     yolov8_data_yaml_file = os.path.join(yolo_directory, 'data.yaml')
 
@@ -43,10 +44,10 @@ if __name__ == "__main__":
 
     with open(yolov8_data_yaml_file, 'w') as fd:
       fd.write(f'''
-train: {os.path.join(yolo_directory, "images", "train")}
-val: {os.path.join(yolo_directory, "images", "val")}
+train: {os.path.join("images", "train")}
+val: {os.path.join("images", "val")}
 
-nc: 1
+nc: {len(all_classes)}
 names: {json.dumps(all_classes)}
 ''')
     print(f'Wrote {yolov8_data_yaml_file}')
