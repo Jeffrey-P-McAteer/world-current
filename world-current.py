@@ -18,6 +18,7 @@ import time
 import random
 import json
 import math
+import threading
 
 import toml
 import diskcache
@@ -217,7 +218,8 @@ if __name__ == '__main__':
   print()
 
   font = so_funcs.get_default_ttf_font(18)
-  for i, p in enumerate(region_power_plants):
+  power_plant_images = [None for p in region_power_plants]
+  def render_one(i, p):
     out_png = f'/tmp/{i}.png'
     image = location_chipper.get_1km_chip_image(
       get_lonx_from_dict(p), get_laty_from_dict(p)
@@ -229,8 +231,20 @@ if __name__ == '__main__':
       font,
       '#ffffff',
     )
+    power_plant_images[i] = image
     image.save(out_png)
     print(f'Output {out_png}')
+
+  threads = []
+  for i, p in enumerate(region_power_plants):
+    t = threading.Thread(target=render_one, args=(i, p))
+    t.start()
+    threads.append(t)
+  for t in threads:
+    t.join()
+  print(f'Done chipping!')
+
+
 
 
 
