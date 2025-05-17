@@ -6,6 +6,7 @@ obj
 env
 out
 report
+runs
 *.exe
 *.dll
 __pycache__
