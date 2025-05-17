@@ -281,12 +281,19 @@ if __name__ == '__main__':
     cmd = ['uv', 'run', os.path.join(os.path.dirname(__file__), 'run-labeler.py'), training_images_folder]
     print(f'> {" ".join(cmd)}')
     subprocess.run(cmd, check=True)
-    sys.exit(1)
+    print(f'world-current.py is done asking for labeling + model-generation to occur.')
+    path_to_tower_model_file = config.get('path_to_tower_model_file', None)
+    if not path_to_tower_model_file is None and os.path.exists(path_to_tower_model_file):
+      yn = input('Would you like to continue the analysis directly using {} as the ? (y/n)')
+      if not 'y' in yn.lower():
+        sys.exit(1)
+    else:
+      print(f'Please go set path_to_tower_model_file to the .pt file we just created in your {config_file}!')
+      sys.exit(1)
 
-  else:
-    print(f'Loading {path_to_tower_model_file} and using it to find tower positions in imagery...')
-    print(f'# TODO')
-    sys.exit(1)
+  print(f'Loading {path_to_tower_model_file} and using it to find tower positions in imagery...')
+  print(f'# TODO')
+  sys.exit(1)
 
 
 
