@@ -60,7 +60,7 @@ names: {json.dumps(all_classes)}
       'detect', 'train',
       f'model={yolov8_model_file}',
       f'data={yolov8_data_yaml_file}',
-      'epochs=100',
+      'epochs=1000',
       'imgsz=1694',
     ], check=True, env=env)
 
