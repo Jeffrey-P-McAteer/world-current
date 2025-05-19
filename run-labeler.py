@@ -6,6 +6,7 @@
 #   "imgviz", "natsort", "loguru", "PyQt5",
 #   "setuptools",
 #   "Pillow",
+#   "onnxruntime",
 # ]
 # ///
 
@@ -97,6 +98,7 @@ if __name__ == "__main__":
 
     env = dict(os.environ)
     env['PYTHONPATH'] = os.pathsep.join(sys.path)
+    env['PATH'] = os.pathsep.join(os.environ.get('PATH', '').split(os.pathsep) + sys.path)
 
     os.makedirs(label_out_folder, exist_ok=True)
 
