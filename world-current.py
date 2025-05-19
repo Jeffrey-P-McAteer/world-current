@@ -315,7 +315,6 @@ if __name__ == '__main__':
       p_lonx, p_laty = p_pos
 
       furthest_from_center_pos = p_pos
-      furthest_from_center_original_px = (0,0)
       for tower_j, box in enumerate(image_result.boxes):
         cls = int(box.cls[0])  # class index
         label = yolo_model.names[cls]  # class name
@@ -330,20 +329,28 @@ if __name__ == '__main__':
 
         if so_funcs.pt_dist(box_gis_center, p_pos) > so_funcs.pt_dist(furthest_from_center_pos, p_pos):
           furthest_from_center_pos = box_gis_center
-          furthest_from_center_original_px = box_pixels_center
 
       # We found the furthest tower, label & return for now.
       furthest_from_center_pixels = so_funcs.latlon_to_pixel(
         furthest_from_center_pos[1], furthest_from_center_pos[0],
         MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
       )
+      if furthest_from_center_pixels[0] < 0 or furthest_from_center_pixels[1] < 0 or furthest_from_center_pixels[0] > MAP_W_PX or furthest_from_center_pixels[1] > MAP_H_PX:
+        # uhhhhh flip 'em?
+        print(f'{i} Flipping coordinates')
+        furthest_from_center_pixels = so_funcs.latlon_to_pixel(
+          furthest_from_center_pos[0], furthest_from_center_pos[1],
+          MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
+        )
+      else:
+        print(f'{i} Did not need to flip!')
 
       out_png = os.path.join(i_folder, 'debug.png')
       labeled_image = p_img.copy()
       drawable = PIL.ImageDraw.Draw(labeled_image)
-      print(f'furthest_from_center_original_px = {furthest_from_center_original_px}')
+      print(f'furthest_from_center_pixels = {furthest_from_center_pixels} at {furthest_from_center_pos}')
       so_funcs.draw_text_with_border(
-        drawable, furthest_from_center_original_px,
+        drawable, furthest_from_center_pixels,
         f'< {furthest_from_center_pos} is furthest',
         font,
         '#ffffff',
