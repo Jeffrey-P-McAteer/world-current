@@ -315,6 +315,7 @@ if __name__ == '__main__':
       p_lonx, p_laty = p_pos
 
       furthest_from_center_pos = p_pos
+      found_a_furthest = False
       for tower_j, box in enumerate(image_result.boxes):
         cls = int(box.cls[0])  # class index
         label = yolo_model.names[cls]  # class name
@@ -329,21 +330,16 @@ if __name__ == '__main__':
 
         if so_funcs.pt_dist(box_gis_center, p_pos) > so_funcs.pt_dist(furthest_from_center_pos, p_pos):
           furthest_from_center_pos = box_gis_center
+          found_a_furthest = True
 
       # We found the furthest tower, label & return for now.
-      furthest_from_center_pixels = so_funcs.latlon_to_pixel(
-        furthest_from_center_pos[1], furthest_from_center_pos[0],
-        MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
-      )
-      if furthest_from_center_pixels[0] < 0 or furthest_from_center_pixels[1] < 0 or furthest_from_center_pixels[0] > MAP_W_PX or furthest_from_center_pixels[1] > MAP_H_PX:
-        # uhhhhh flip 'em?
-        print(f'{i} Flipping coordinates')
+      if found_a_furthest:
         furthest_from_center_pixels = so_funcs.latlon_to_pixel(
           furthest_from_center_pos[0], furthest_from_center_pos[1],
           MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
         )
       else:
-        print(f'{i} Did not need to flip!')
+        print(f'{i} Had NO detected items!')
 
       out_png = os.path.join(i_folder, 'debug.png')
       labeled_image = p_img.copy()
