@@ -18,7 +18,7 @@ USE_OVERLAY = False
 IMAGERY_URL = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 LABELS_URL  = "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{z}/{y}/{x}"
 
-IMAGERY_EXPIRE_SECONDS = 2 * 24 * 60 * 60 # 2 day expiry
+IMAGERY_EXPIRE_SECONDS = 7 * 24 * 60 * 60 # 1 week
 
 at_d_cache = None
 server_inst = None
