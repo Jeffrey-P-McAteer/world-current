@@ -12,6 +12,22 @@ import os
 import shutil
 import json
 import pathlib
+import platform
+
+def detect_nvidia_gpu():
+    if platform.system() == 'Windows':
+        # Use the Windows command-line tool to detect NVIDIA GPUs
+        output = subprocess.check_output(['wmic', 'path', 'win32_VideoController', 'get', 'name'])
+        output = output.decode('utf-8')
+        return 'NVIDIA'.casefold() in output.casefold()
+    elif platform.system() == 'Linux':
+        # Use the Linux command-line tool to detect NVIDIA GPUs
+        output = subprocess.check_output(['lspci', '-nn'])
+        output = output.decode('utf-8')
+        return 'NVIDIA'.casefold() in output.casefold()
+    else:
+        # If the platform is not Windows or Linux, return False
+        return False
 
 def read_all_labelme_classes(labelme_dir):
     all_classes = set()
@@ -56,14 +72,22 @@ names: {json.dumps(all_classes)}
     env = dict(os.environ)
     env['PYTHONPATH'] = os.pathsep.join(sys.path)
     print(f'Found yolo at {shutil.which("yolo")}')
+
+    num_epochs = 1000
+    patience = 400
+    if not detect_nvidia_gpu():
+       num_epochs = 300
+       patience = 40
+    print(f'num_epochs={num_epochs} patience={patience}')
+
     subprocess.run([
       shutil.which("yolo"),
       'detect', 'train',
       f'model={yolov8_model_file}',
       f'data={yolov8_data_yaml_file}',
-      'epochs=1000',
+      f'epochs={num_epochs}',
       'imgsz=1694',
-      'patience=500',
+      f'patience={patience}',
     ], check=True, env=env)
 
     newest_pt_file = None
