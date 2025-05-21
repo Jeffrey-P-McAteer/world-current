@@ -141,6 +141,10 @@ def die(msg='', code=1):
   print_help()
   sys.exit(code)
 
+def tower_follower(yolo_model, current_lon_x, current_lat_y, ):
+  pass
+
+
 if __name__ == '__main__':
   if len(sys.argv) < 2:
     die('No config.toml passed as an argument! Write a configuration file and try again.')
@@ -339,7 +343,8 @@ if __name__ == '__main__':
           MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
         )
       else:
-        print(f'{i} Had NO detected items!')
+        print(f'{i} Had NO detected items, skipping...')
+        continue
 
       out_png = os.path.join(i_folder, 'debug.png')
       labeled_image = p_img.copy()
