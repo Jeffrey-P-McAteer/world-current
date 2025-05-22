@@ -102,7 +102,41 @@ for contour in contours:
                 (x1, y1, x2, y2)
             )
 
+# we now filter by a criteria which gets rid of large results; we draw a circle around the line, and if anything outside of +- 20% of the line length is intersected we omit
+# the line being rotated.
+line_similarity_threshold = 0.20
+hits_with_only_similars_nearby = []
 for idx, line in enumerate(potential_hits):
+    x1, y1, x2, y2 = line
+    line_length = math.sqrt(((x1-x2)**2.0 + ((y1-y2)**2.0)))
+
+    intersecting_lines = []
+    for maybe_iline in potential_hits:
+        m_x1, m_y1, m_x2, m_y2 = maybe_iline
+        if (line[0] < maybe_iline[2] and maybe_iline[0] < line[2] and
+            line[1] < maybe_iline[3] and maybe_iline[1] < line[3]):
+            intersecting_lines.append(maybe_iline)
+    shortest_iline_length = None
+    longest_iline_length = None
+    for iline in intersecting_lines:
+        m_x1, m_y1, m_x2, m_y2 = maybe_iline
+        iline_length = math.sqrt(((m_x1-m_x2)**2.0 + ((m_y1-m_y2)**2.0)))
+        if shortest_iline_length is None:
+            shortest_iline_length = iline_length
+        if longest_iline_length is None:
+            longest_iline_length = iline_length
+        shortest_iline_length = min(iline_length, shortest_iline_length)
+        longest_iline_length = max(iline_length, longest_iline_length)
+
+    if shortest_iline_length is not None and longest_iline_length is not None:
+        shortest_is_within_threshold = shortest_iline_length >= (1.0-line_similarity_threshold) * line_length
+        longest_is_within_threshold = longest_iline_length <= (1.0+line_similarity_threshold) * line_length
+        if shortest_is_within_threshold and longest_is_within_threshold:
+            # line is mostly isolated, save for similarly-sized features
+            hits_with_only_similars_nearby.append(line)
+
+
+for idx, line in enumerate(hits_with_only_similars_nearby):
     x1, y1, x2, y2 = line
     print(f"Line {idx+1}: Start({x1}, {y1}) - End({x2}, {y2})")
     cv2.line(lines_output_image, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Red lines
