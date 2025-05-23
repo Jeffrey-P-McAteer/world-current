@@ -13,6 +13,14 @@ import shapely
 import shapely.geometry
 import shapely.wkt
 
+
+def get_laty_from_dict(d):
+  return float(d.get('latitude', d.get('lat', d.get('y', None))))
+
+def get_lonx_from_dict(d):
+  return float(d.get('longitude', d.get('lon', d.get('x', None))))
+
+
 def pt_dist(p1, p2):
     return math.sqrt(
         ((p1[0] - p2[0])**2.0) + ((p1[1] - p2[1])**2.0)

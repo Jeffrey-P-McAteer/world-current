@@ -42,6 +42,7 @@ sys.path.append(os.path.dirname(__file__))
 import so_funcs
 import analytic_tile_server
 import location_chipper
+import tower_follower
 
 cache = diskcache.Cache(platformdirs.user_cache_dir('world-current'))
 CACHE_EXPIRE_S = 60 * 60
@@ -57,12 +58,6 @@ def lcache(key, expensive_call, expire=CACHE_EXPIRE_S):
         value = expensive_call()
     cache.set(key, value, expire=expire)
     return value
-
-def get_laty_from_dict(d):
-  return float(d.get('latitude', d.get('lat', d.get('y', None))))
-
-def get_lonx_from_dict(d):
-  return float(d.get('longitude', d.get('lon', d.get('x', None))))
 
 def color_from_dict(d, default_value='grey'):
   if 'color' in d:
@@ -141,10 +136,6 @@ def die(msg='', code=1):
   print_help()
   sys.exit(code)
 
-def tower_follower(yolo_model, current_lon_x, current_lat_y, ):
-  pass
-
-
 if __name__ == '__main__':
   if len(sys.argv) < 2:
     die('No config.toml passed as an argument! Write a configuration file and try again.')
@@ -189,7 +180,7 @@ if __name__ == '__main__':
     m = staticmap.StaticMap(MAP_W_PX, MAP_H_PX, url_template=f'http://127.0.0.1:{port}/tile/{{z}}/{{y}}/{{x}}.png')
     for p in region_power_plants:
       marker = staticmap.CircleMarker(
-        (get_lonx_from_dict(p), get_laty_from_dict(p) ),
+        (so_funcs.get_lonx_from_dict(p), so_funcs.get_laty_from_dict(p) ),
         color_from_dict(p, default_value=color_of_energy_source(energy_source(p))),
         size_from_dict(p)
       )
@@ -205,8 +196,8 @@ if __name__ == '__main__':
     taken_xy_coords = list()
     for p in region_power_plants:
       e_source = energy_source(p)
-      draw_x = m._x_to_px(staticmap.staticmap._lon_to_x(get_lonx_from_dict(p), m_zoom))
-      draw_y = m._y_to_px(staticmap.staticmap._lat_to_y(get_laty_from_dict(p), m_zoom))
+      draw_x = m._x_to_px(staticmap.staticmap._lon_to_x(so_funcs.get_lonx_from_dict(p), m_zoom))
+      draw_y = m._y_to_px(staticmap.staticmap._lat_to_y(so_funcs.get_laty_from_dict(p), m_zoom))
       # Offset text slightly to avoid overlapping with the marker
       x_offset = 5
       y_offset = -10
@@ -236,7 +227,7 @@ if __name__ == '__main__':
 
   def render_one(i, p):
     image = location_chipper.get_1km_chip_image(
-      get_lonx_from_dict(p), get_laty_from_dict(p)
+      so_funcs.get_lonx_from_dict(p), so_funcs.get_laty_from_dict(p)
     )
     power_plant_images[i] = image
 
@@ -307,59 +298,17 @@ if __name__ == '__main__':
 
   step3_tower_following_folder = config.get('step3_tower_following_folder', None)
   if not step3_tower_following_folder is None:
-    print(f'Writing tower-following results to {step3_tower_following_folder}/{{i}}/{{j}}.png')
     font = so_funcs.get_default_ttf_font(18)
-    power_plant_images_numpy = [numpy.array(img) for img in power_plant_images]
-    for i, image_result in enumerate( list(yolo_model(power_plant_images_numpy)) ):
+    for i, p in enumerate( region_power_plants ):
       i_folder = os.path.join(step3_tower_following_folder, f'{i}')
       os.makedirs(i_folder, exist_ok=True)
-      p_img = power_plant_images[i]
       p = region_power_plants[i]
-      p_pos = (get_lonx_from_dict(p), get_laty_from_dict(p))
-      p_lonx, p_laty = p_pos
+      p_lonx, p_laty = (so_funcs.get_lonx_from_dict(p), so_funcs.get_laty_from_dict(p))
 
-      furthest_from_center_pos = p_pos
-      found_a_furthest = False
-      for tower_j, box in enumerate(image_result.boxes):
-        cls = int(box.cls[0])  # class index
-        label = yolo_model.names[cls]  # class name
-        xyxy = box.xyxy[0].tolist()  # bounding box coordinates
-        conf = float(box.conf[0])  # confidence score
-
-        box_pixels_center = so_funcs.center_of_bbox(*xyxy)
-        box_gis_center = so_funcs.pixel_to_latlon(
-          box_pixels_center[0], box_pixels_center[1],
-          MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
-        )
-
-        if so_funcs.pt_dist(box_gis_center, p_pos) > so_funcs.pt_dist(furthest_from_center_pos, p_pos):
-          furthest_from_center_pos = box_gis_center
-          found_a_furthest = True
-
-      # We found the furthest tower, label & return for now.
-      if found_a_furthest:
-        furthest_from_center_pixels = so_funcs.latlon_to_pixel(
-          furthest_from_center_pos[0], furthest_from_center_pos[1],
-          MAP_W_PX, MAP_H_PX, m_zoom, p_laty, p_lonx
-        )
-      else:
-        print(f'{i} Had NO detected items, skipping...')
-        continue
-
-      out_png = os.path.join(i_folder, 'debug.png')
-      labeled_image = p_img.copy()
-      drawable = PIL.ImageDraw.Draw(labeled_image)
-      print(f'furthest_from_center_pixels = {furthest_from_center_pixels} at {furthest_from_center_pos}')
-      so_funcs.draw_text_with_border(
-        drawable, furthest_from_center_pixels,
-        f'< {furthest_from_center_pos} is furthest',
-        font,
-        '#ffffff',
+      tower_follower.follow_towers(
+        config, i, 0, i_folder, p_lonx, p_laty, list(), yolo_model, font,
+        MAP_W_PX, MAP_H_PX, m_zoom
       )
-      labeled_image.save(out_png)
-      print(f'Output {out_png}')
-
-
 
   else:
     print(f'TODO use research w/ step3_tower_following_folder output to do the same but w/o intermediate outputs')
