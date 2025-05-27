@@ -26,7 +26,7 @@ def next_nonexisting(directory, file_name_creator):
 
 # i == number from gen fac, j == number in recursive sequence, primarially used for debugging
 def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yolo_model, font, MAP_W_PX, MAP_H_PX, m_zoom):
-    if have_processed(already_processed_xys, lonx, laty):
+    if have_processed(already_processed_xys, lonx, laty) or j > 50:
         return 0
     
     #tower_following_out_png = os.path.join(i_folder, f'{j}.png')
