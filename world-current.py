@@ -320,7 +320,7 @@ if __name__ == '__main__':
       p_as_json = json.dumps(region_power_plants[i], indent=4, sort_keys=True)
       report_html += f'<details><summary><h2 style="margin-top:0;">Facility {i}<h2></summary><pre>{p_as_json}</pre></details>'
       report_html += '<div style="display:inline;overflow-x:scroll;max-width:98vw;">'
-      for image_name in os.listdir(i_folder):
+      for image_name in sorted(os.listdir(i_folder)):
         if image_name.casefold().endswith('.png') or image_name.casefold().endswith('.jpg'):
           report_html += f'<img src="{i}/{image_name}" width=512 height=512/>'
       report_html += '</div>'
