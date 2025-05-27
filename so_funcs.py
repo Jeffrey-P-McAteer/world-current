@@ -34,7 +34,7 @@ def pixel_size(zoom, tile_size=256):
     lat_size = math.degrees(lat_size)
     return lon_size, lat_size
 
-def pixel_to_latlon(x, y, image_width, image_height, zoom, center_laty, center_lonx):
+def pixel_to_lonx_laty(x, y, image_width, image_height, zoom, center_laty, center_lonx):
     px2lon, px2lat = pixel_size(zoom)
 
     return center_lonx + (px2lon * (x - (image_width/2.0))), center_laty + (-1.0 * px2lat * (y - (image_height/2.0)))

@@ -26,6 +26,7 @@ def latlon_to_tile(lat, lon, zoom):
 
 def download_tile(x, y, zoom):
     url = TILE_URL.format(z=zoom, x=x, y=y)
+    print(f'Downloading Image {url}')
     content = chip_cache.get(url, None)
     if content is None:
       response = requests.get(url)
@@ -67,7 +68,8 @@ def crop_to_1000m_area(image, lat, zoom, crop_size_m=1000):
 def get_1km_chip_image(lonx, laty):
   tile_x, tile_y = latlon_to_tile(laty, lonx, ZOOM)
   stitched_img = stitch_tiles(tile_x, tile_y, ZOOM, tile_count=11)
-  return crop_to_1000m_area(stitched_img, laty, ZOOM)
+  #return crop_to_1000m_area(stitched_img, laty, ZOOM)
+  return stitched_img
 
 
 

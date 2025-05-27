@@ -43,6 +43,13 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
     
     labeled_image = pil_image.copy()
     drawable = PIL.ImageDraw.Draw(labeled_image)
+
+    so_funcs.draw_text_with_border(
+        drawable, (4.0, 4.0),
+        f'Image x,y center = {lonx}, {laty}\n',
+        font,
+        '#ffffff',
+    )
     
     numpy_image = numpy.array(pil_image)
     numpy_images = [numpy_image]
@@ -60,9 +67,13 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
 
         box_pixels_center = so_funcs.center_of_bbox(*xyxy)
 
+        box_gis_center = so_funcs.pixel_to_lonx_laty(
+          box_pixels_center[0], box_pixels_center[1],
+          MAP_W_PX, MAP_H_PX, m_zoom, laty, lonx
+        )
         so_funcs.draw_text_with_border(
             drawable, box_pixels_center,
-            f'< {box_pixels_center} is a {label} ({round(conf, 2)})',
+            f'< {box_pixels_center} is a {label} ({round(conf, 2)}) at GIS location lonx,laty= {box_gis_center}',
             font,
             '#ffffff',
         )
@@ -81,13 +92,13 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         conf = float(box.conf[0])  # confidence score
         
         box_pixels_center = so_funcs.center_of_bbox(*xyxy)
-        box_gis_center = so_funcs.pixel_to_latlon(
+        box_gis_center = so_funcs.pixel_to_lonx_laty(
           box_pixels_center[0], box_pixels_center[1],
           MAP_W_PX, MAP_H_PX, m_zoom, laty, lonx
         )
 
         num_towers_processed += follow_towers(
-            config, i, j+num_towers_processed+1, i_folder, box_gis_center[1], box_gis_center[0], already_processed_xys,
+            config, i, j+num_towers_processed+1, i_folder, box_gis_center[0], box_gis_center[1], already_processed_xys,
             yolo_model, font, MAP_W_PX, MAP_H_PX, m_zoom
         )
 
