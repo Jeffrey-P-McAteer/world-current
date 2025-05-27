@@ -26,7 +26,7 @@ def pt_dist(p1, p2):
         ((p1[0] - p2[0])**2.0) + ((p1[1] - p2[1])**2.0)
     )
 
-def pixel_to_latlon(x, y, image_width, image_height, zoom, center_lat, center_lon):
+def pixel_to_latlon(x, y, image_width, image_height, zoom, center_laty, center_lonx):
     TILE_SIZE = 256
 
     # Convert center lat/lon to pixel coordinates at this zoom level
@@ -48,7 +48,7 @@ def pixel_to_latlon(x, y, image_width, image_height, zoom, center_lat, center_lo
         return lat, lon
 
     # Center pixel position in global coordinates
-    center_px, center_py = latlon_to_pixels(center_lat, center_lon, zoom)
+    center_px, center_py = latlon_to_pixels(center_laty, center_lonx, zoom)
 
     # Offset from image center to this pixel
     dx = x - image_width / 2
@@ -61,7 +61,7 @@ def pixel_to_latlon(x, y, image_width, image_height, zoom, center_lat, center_lo
     # Convert back to lat/lon
     return pixels_to_latlon(target_px, target_py, zoom)
 
-def latlon_to_pixel(lat, lon, image_width, image_height, zoom, center_lat, center_lon):
+def latlon_to_pixel(lat, lon, image_width, image_height, zoom, center_laty, center_lonx):
     TILE_SIZE = 256
 
     # Convert lat/lon to global pixel coordinates at a given zoom level
@@ -73,7 +73,7 @@ def latlon_to_pixel(lat, lon, image_width, image_height, zoom, center_lat, cente
         return x, y
 
     # Get global pixel coordinates of center and target lat/lon
-    center_px, center_py = latlon_to_global_px(center_lat, center_lon, zoom)
+    center_px, center_py = latlon_to_global_px(center_laty, center_lonx, zoom)
     target_px, target_py = latlon_to_global_px(lat, lon, zoom)
 
     # Calculate pixel position relative to image center

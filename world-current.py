@@ -22,6 +22,7 @@ import json
 import math
 import threading
 import subprocess
+import webbrowser
 
 import toml
 import diskcache
@@ -299,6 +300,8 @@ if __name__ == '__main__':
   step3_tower_following_folder = config.get('step3_tower_following_folder', None)
   if not step3_tower_following_folder is None:
     font = so_funcs.get_default_ttf_font(18)
+    report_html_path = os.path.join(step3_tower_following_folder, 'index.html')
+    report_html = '<html><head><title>Following Results</title></head><body>'
     for i, p in enumerate( region_power_plants ):
       i_folder = os.path.join(step3_tower_following_folder, f'{i}')
       os.makedirs(i_folder, exist_ok=True)
@@ -309,6 +312,23 @@ if __name__ == '__main__':
         config, i, 0, i_folder, p_lonx, p_laty, list(), yolo_model, font,
         MAP_W_PX, MAP_H_PX, m_zoom
       )
+
+
+      p_as_json = json.dumps(region_power_plants[i], indent=4, sort_keys=True)
+      report_html += f'<details><summary><h2 style="margin-top:0;">Facility {i}<h2></summary><pre>{p_as_json}</pre></details>'
+      report_html += '<div style="display:inline;overflow-x:scroll;max-width:98vw;">'
+      for image_name in os.listdir(i_folder):
+        if image_name.casefold().endswith('.png') or image_name.casefold().endswith('.jpg'):
+          report_html += f'<img src="{i}/{image_name}" width=512 height=512/>'
+      report_html += '</div>'
+      report_html += '<hr/>'
+
+    report_html += '</body>'
+    
+    with open(report_html_path, 'w') as fd:
+      fd.write(report_html)
+    webbrowser.open(report_html_path)
+    print(f'Output {report_html_path}')
 
   else:
     print(f'TODO use research w/ step3_tower_following_folder output to do the same but w/o intermediate outputs')
