@@ -14,7 +14,7 @@ import location_chipper
 def have_processed(list_of_xy, lonx, laty):
     equality_epsilon = 0.000001
     for x,y in list_of_xy:
-        if abs(x - lonx) < equality_epsilon and abs(y - laty):
+        if abs(x - lonx) < equality_epsilon and abs(y - laty) < equality_epsilon:
             return True
     return False
 

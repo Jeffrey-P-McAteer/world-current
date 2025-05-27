@@ -313,7 +313,7 @@ if __name__ == '__main__':
 
       tower_follower.follow_towers(
         config, i, 0, i_folder, p_lonx, p_laty, list(), yolo_model, font,
-        MAP_W_PX, MAP_H_PX, m_zoom
+        image.width, image.height, m_zoom
       )
 
 

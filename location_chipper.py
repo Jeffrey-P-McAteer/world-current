@@ -26,7 +26,7 @@ def latlon_to_tile(lat, lon, zoom):
 
 def download_tile(x, y, zoom):
     url = TILE_URL.format(z=zoom, x=x, y=y)
-    print(f'Downloading Image {url}')
+    #print(f'Downloading Image {url}')
     content = chip_cache.get(url, None)
     if content is None:
       response = requests.get(url)
