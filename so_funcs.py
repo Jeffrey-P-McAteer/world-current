@@ -29,61 +29,73 @@ def pt_dist(p1, p2):
 def pixel_to_latlon(x, y, image_width, image_height, zoom, center_laty, center_lonx):
     TILE_SIZE = 256
 
-    # Convert center lat/lon to pixel coordinates at this zoom level
-    def latlon_to_pixels(lat, lon, zoom):
-        scale = TILE_SIZE * 2**zoom
-        x_pixel = (lon + 180.0) / 360.0 * scale
-        sin_lat = math.sin(math.radians(lat))
-        y_pixel = (
-            0.5 - math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * math.pi)
-        ) * scale
-        return x_pixel, y_pixel
+    # # Convert center lat/lon to pixel coordinates at this zoom level
+    # def latlon_to_pixels(lat, lon, zoom):
+    #     scale = TILE_SIZE * 2**zoom
+    #     x_pixel = (lon + 180.0) / 360.0 * scale
+    #     sin_lat = math.sin(math.radians(lat))
+    #     y_pixel = (
+    #         0.5 - math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * math.pi)
+    #     ) * scale
+    #     return x_pixel, y_pixel
 
-    # Convert pixel coordinates to lat/lon at this zoom level
-    def pixels_to_latlon(px, py, zoom):
-        scale = TILE_SIZE * 2**zoom
-        lon = px / scale * 360.0 - 180.0
-        n = math.pi - 2.0 * math.pi * py / scale
-        lat = math.degrees(math.atan(math.sinh(n)))
-        return lat, lon
+    # # Convert pixel coordinates to lat/lon at this zoom level
+    # def pixels_to_latlon(px, py, zoom):
+    #     scale = TILE_SIZE * 2**zoom
+    #     lon = px / scale * 360.0 - 180.0
+    #     n = math.pi - 2.0 * math.pi * py / scale
+    #     lat = math.degrees(math.atan(math.sinh(n)))
+    #     return lat, lon
 
-    # Center pixel position in global coordinates
-    center_px, center_py = latlon_to_pixels(center_laty, center_lonx, zoom)
+    # # Center pixel position in global coordinates
+    # center_px, center_py = latlon_to_pixels(center_laty, center_lonx, zoom)
 
-    # Offset from image center to this pixel
-    dx = x - image_width / 2
-    dy = y - image_height / 2
+    # # Offset from image center to this pixel
+    # dx = x - image_width / 2
+    # dy = y - image_height / 2
 
-    # Global pixel coordinates of the input pixel
-    target_px = center_px + dx
-    target_py = center_py + dy
+    # # Global pixel coordinates of the input pixel
+    # target_px = center_px + dx
+    # target_py = center_py + dy
 
-    # Convert back to lat/lon
-    return pixels_to_latlon(target_px, target_py, zoom)
+    # # Convert back to lat/lon
+    # return pixels_to_latlon(target_px, target_py, zoom)
+
+    n = 2 ** zoom
+    lon = (x / n) * 360.0 - 180.0
+    lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * y / n)))
+    lat = math.degrees(lat_rad)
+    return lon, lat
 
 def latlon_to_pixel(lat, lon, image_width, image_height, zoom, center_laty, center_lonx):
     TILE_SIZE = 256
 
-    # Convert lat/lon to global pixel coordinates at a given zoom level
-    def latlon_to_global_px(lat, lon, zoom):
-        scale = TILE_SIZE * 2**zoom
-        x = (lon + 180.0) / 360.0 * scale
-        sin_lat = math.sin(math.radians(lat))
-        y = (0.5 - math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * math.pi)) * scale
-        return x, y
+    # # Convert lat/lon to global pixel coordinates at a given zoom level
+    # def latlon_to_global_px(lat, lon, zoom):
+    #     scale = TILE_SIZE * 2**zoom
+    #     x = (lon + 180.0) / 360.0 * scale
+    #     sin_lat = math.sin(math.radians(lat))
+    #     y = (0.5 - math.log((1 + sin_lat) / (1 - sin_lat)) / (4 * math.pi)) * scale
+    #     return x, y
 
-    # Get global pixel coordinates of center and target lat/lon
-    center_px, center_py = latlon_to_global_px(center_laty, center_lonx, zoom)
-    target_px, target_py = latlon_to_global_px(lat, lon, zoom)
+    # # Get global pixel coordinates of center and target lat/lon
+    # center_px, center_py = latlon_to_global_px(center_laty, center_lonx, zoom)
+    # target_px, target_py = latlon_to_global_px(lat, lon, zoom)
 
-    # Calculate pixel position relative to image center
-    dx = target_px - center_px
-    dy = target_py - center_py
+    # # Calculate pixel position relative to image center
+    # dx = target_px - center_px
+    # dy = target_py - center_py
 
-    pixel_x = image_width / 2 + dx
-    pixel_y = image_height / 2 + dy
+    # pixel_x = image_width / 2 + dx
+    # pixel_y = image_height / 2 + dy
 
-    return pixel_x, pixel_y
+    # return pixel_x, pixel_y
+
+    n = 2 ** zoom
+    x = int((lon + 180.0) / 360.0 * n)
+    lat_rad = math.radians(lat)
+    y = int(n / 2 - n / 2 * math.log(math.tan(math.pi / 4 + lat_rad / 2)) / math.pi)
+    return x, y
 
 def brightness(color):
     # Convert color name or hex to RGB tuple
