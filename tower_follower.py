@@ -3,6 +3,7 @@
 import os
 import sys
 import math
+import traceback
 
 import numpy
 import PIL
@@ -17,17 +18,28 @@ def have_processed(list_of_xy, lonx, laty):
             return True
     return False
 
+def next_nonexisting(directory, file_name_creator):
+    n = 0
+    while os.path.exists( os.path.join(directory, file_name_creator(n)) ):
+        n += 1
+    return os.path.join(directory, file_name_creator(n))
+
 # i == number from gen fac, j == number in recursive sequence, primarially used for debugging
 def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yolo_model, font, MAP_W_PX, MAP_H_PX, m_zoom):
     if have_processed(already_processed_xys, lonx, laty):
         return 0
     
-    tower_following_out_png = os.path.join(i_folder, f'{j}.png')
+    #tower_following_out_png = os.path.join(i_folder, f'{j}.png')
+    tower_following_out_png = next_nonexisting(i_folder, lambda n:  f'{n}.png')
     print(f'Writing tower-following results to {tower_following_out_png}')
     print(f'Calling get_1km_chip_image({lonx}, {laty})')
-    pil_image = location_chipper.get_1km_chip_image(
-      lonx, laty
-    )
+    try:
+        pil_image = location_chipper.get_1km_chip_image(
+            lonx, laty
+        )
+    except:
+        traceback.print_exc()
+        return 0
     
     labeled_image = pil_image.copy()
     drawable = PIL.ImageDraw.Draw(labeled_image)

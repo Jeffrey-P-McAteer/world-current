@@ -23,6 +23,7 @@ import math
 import threading
 import subprocess
 import webbrowser
+import shutil
 
 import toml
 import diskcache
@@ -304,6 +305,8 @@ if __name__ == '__main__':
     report_html = '<html><head><title>Following Results</title></head><body>'
     for i, p in enumerate( region_power_plants ):
       i_folder = os.path.join(step3_tower_following_folder, f'{i}')
+      if os.path.exists(i_folder):
+        shutil.rmtree(i_folder, ignore_errors=True)
       os.makedirs(i_folder, exist_ok=True)
       p = region_power_plants[i]
       p_lonx, p_laty = (so_funcs.get_lonx_from_dict(p), so_funcs.get_laty_from_dict(p))
