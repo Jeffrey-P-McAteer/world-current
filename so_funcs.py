@@ -34,18 +34,20 @@ def pixel_size(zoom, tile_size=256):
     lat_size = math.degrees(lat_size)
     return lon_size, lat_size
 
+PX_SCALE_FACTOR = 0.0008
+
 def pixel_to_lonx_laty(x, y, image_width, image_height, zoom, center_laty, center_lonx):
     px2lon, px2lat = pixel_size(zoom)
-    px2lon *= 0.1 # 0.1 is arbitrary scaling to get images closer
-    px2lat *= 0.1
+    px2lon *= PX_SCALE_FACTOR # PX_SCALE_FACTOR is arbitrary scaling to get images closer
+    px2lat *= PX_SCALE_FACTOR
     return center_lonx + (px2lon * (x - (image_width/2.0))), center_laty + (-1.0 * px2lat * (y - (image_height/2.0)))
 
 def latlon_to_pixel(laty, lonx, image_width, image_height, zoom, center_laty, center_lonx):
     px2lon, px2lat = pixel_size(zoom)
     delta_laty = center_laty - laty
     delta_lonx = center_lonx - lonx
-    delta_pixels_y = (delta_laty / px2lat) * 0.1 # 0.1 is arbitrary scaling to get images closer
-    delta_pixels_x = (delta_lonx / px2lon) * 0.1
+    delta_pixels_y = (delta_laty / px2lat) * PX_SCALE_FACTOR # PX_SCALE_FACTOR is arbitrary scaling to get images closer
+    delta_pixels_x = (delta_lonx / px2lon) * PX_SCALE_FACTOR
     return int(delta_pixels_x + (image_width / 2)), int(delta_pixels_y + (image_height / 2))
 
 def brightness(color):

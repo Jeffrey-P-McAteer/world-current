@@ -50,6 +50,10 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         font,
         '#ffffff',
     )
+    d_width, d_height = labeled_image.size
+    center_x = d_width // 2 - 2
+    center_y = d_height // 2 - 2
+    drawable.rectangle((center_x, center_y, center_x + 4, center_y + 4), fill=(255, 0, 0))
     
     numpy_image = numpy.array(pil_image)
     numpy_images = [numpy_image]
