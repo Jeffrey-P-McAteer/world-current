@@ -88,7 +88,7 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         )
 
         so_funcs.draw_text_with_border(
-            drawable, ((j * 25) + 50, ),
+            drawable, ((j * 25) + 50, 5),
             f'{tower_j} {box_pixels_center} is a {label} ({round(conf, 2)})\nat GIS location lonx,laty={round(box_gis_center[1], 4)},{round(box_gis_center[0], 4)}',
             font,
             '#ffffff',
