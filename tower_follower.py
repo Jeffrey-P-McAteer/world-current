@@ -17,7 +17,7 @@ PIXEL_WIDTH_METERS = 152.4 / measured_bar_lengths_px
 # print(f'At zoom {ZOOM} level each pixel is {round(pixel_width_meters, 3)} meters wide')
 
 def have_processed(list_of_xy, lonx, laty):
-    equality_epsilon = 0.00001
+    equality_epsilon = 0.0001
     for x,y in list_of_xy:
         if abs(x - lonx) < equality_epsilon and abs(y - laty) < equality_epsilon:
             return True
@@ -56,9 +56,9 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         '#ffffff',
     )
     d_width, d_height = labeled_image.size
-    center_x = d_width // 2 - 2
-    center_y = d_height // 2 - 2
-    drawable.rectangle((center_x, center_y, center_x + 4, center_y + 4), fill=(255, 0, 0))
+    center_x = d_width // 2
+    center_y = d_height // 2
+    drawable.rectangle((center_x-2, center_y-2, center_x+4, center_y+4), fill=(255, 0, 0))
     
     numpy_image = numpy.array(pil_image)
     numpy_images = [numpy_image]
@@ -75,12 +75,20 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         conf = float(box.conf[0])  # confidence score
 
         box_pixels_center = so_funcs.center_of_bbox(*xyxy)
-        north_pixels_from_center = -1 * (box_pixels_center[0] - center_y) # laty, negative b/c latitude is the opposite direction of screen coordinates
-        east_pixels_from_center = box_pixels_center[1] - center_x # lonx
+        north_pixels_from_center = box_pixels_center[1] - center_y # laty
+        east_pixels_from_center = box_pixels_center[0] - center_x # lonx
+        # negative b/c latitude is the opposite direction of screen coordinates
         box_gis_center = so_funcs.add_pixels_to_coordinates(laty, lonx, -north_pixels_from_center, east_pixels_from_center)
 
         so_funcs.draw_text_with_border(
             drawable, box_pixels_center,
+            f'<{tower_j}',
+            font,
+            '#ffffff',
+        )
+
+        so_funcs.draw_text_with_border(
+            drawable, ((j * 25) + 50, ),
             f'{tower_j} {box_pixels_center} is a {label} ({round(conf, 2)})\nat GIS location lonx,laty={round(box_gis_center[1], 4)},{round(box_gis_center[0], 4)}',
             font,
             '#ffffff',
@@ -100,10 +108,9 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         conf = float(box.conf[0])  # confidence score
         
         box_pixels_center = so_funcs.center_of_bbox(*xyxy)
-
-        north_pixels_from_center = -1 * (box_pixels_center[0] - center_y) # laty, negative b/c latitude is the opposite direction of screen coordinates
-        east_pixels_from_center = box_pixels_center[1] - center_x # lonx
-
+        north_pixels_from_center = box_pixels_center[1] - center_y # laty
+        east_pixels_from_center = box_pixels_center[0] - center_x # lonx
+        # negative b/c latitude is the opposite direction of screen coordinates
         box_gis_laty, box_gis_lonx = so_funcs.add_pixels_to_coordinates(laty, lonx, -north_pixels_from_center, east_pixels_from_center)
 
         num_towers_processed += follow_towers(
