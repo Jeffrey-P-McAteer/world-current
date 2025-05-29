@@ -17,7 +17,7 @@ PIXEL_WIDTH_METERS = 152.4 / measured_bar_lengths_px
 # print(f'At zoom {ZOOM} level each pixel is {round(pixel_width_meters, 3)} meters wide')
 
 def have_processed(list_of_xy, lonx, laty):
-    equality_epsilon = 0.000001
+    equality_epsilon = 0.00001
     for x,y in list_of_xy:
         if abs(x - lonx) < equality_epsilon and abs(y - laty) < equality_epsilon:
             return True
@@ -75,14 +75,13 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         conf = float(box.conf[0])  # confidence score
 
         box_pixels_center = so_funcs.center_of_bbox(*xyxy)
+        north_pixels_from_center = -1 * (box_pixels_center[0] - center_y) # laty, negative b/c latitude is the opposite direction of screen coordinates
+        east_pixels_from_center = box_pixels_center[1] - center_x # lonx
+        box_gis_center = so_funcs.add_pixels_to_coordinates(laty, lonx, north_pixels_from_center, east_pixels_from_center)
 
-        box_gis_center = so_funcs.pixel_to_lonx_laty(
-          box_pixels_center[0], box_pixels_center[1],
-          MAP_W_PX, MAP_H_PX, m_zoom, laty, lonx
-        )
         so_funcs.draw_text_with_border(
             drawable, box_pixels_center,
-            f'< {box_pixels_center} is a {label} ({round(conf, 2)}) at GIS location lonx,laty= {box_gis_center}',
+            f'{tower_j} {box_pixels_center} is a {label} ({round(conf, 2)})\nat GIS location lonx,laty={round(box_gis_center[0], 4)},{round(box_gis_center[1], 4)}',
             font,
             '#ffffff',
         )
@@ -101,13 +100,14 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         conf = float(box.conf[0])  # confidence score
         
         box_pixels_center = so_funcs.center_of_bbox(*xyxy)
-        box_gis_center = so_funcs.pixel_to_lonx_laty(
-          box_pixels_center[0], box_pixels_center[1],
-          MAP_W_PX, MAP_H_PX, m_zoom, laty, lonx
-        )
+
+        north_pixels_from_center = -1 * (box_pixels_center[0] - center_y) # laty, negative b/c latitude is the opposite direction of screen coordinates
+        east_pixels_from_center = box_pixels_center[1] - center_x # lonx
+
+        box_gis_laty, box_gis_lonx = so_funcs.add_pixels_to_coordinates(laty, lonx, north_pixels_from_center, east_pixels_from_center)
 
         num_towers_processed += follow_towers(
-            config, i, j+num_towers_processed+1, i_folder, box_gis_center[0], box_gis_center[1], already_processed_xys,
+            config, i, j+num_towers_processed+1, i_folder, box_gis_lonx, box_gis_laty, already_processed_xys,
             yolo_model, font, MAP_W_PX, MAP_H_PX, m_zoom
         )
 

@@ -39,16 +39,16 @@ def add_pixels_to_coordinates(lat, lon, pixels_north, pixels_east):
     Returns:
     tuple: A tuple containing the new latitude and longitude in decimal degrees.
     """
-    # Define the pixel size in meters
-    pixel_size_meters = 0.378320231692
+    # Define the pixel size in meters - this number only holds for zoom leve 18, use TEST-latlon.py to download a new marker and manually measure the 152.4-meter-long calibration site.
+    pixel_size_meters = 0.37832023169218043
 
     # Convert the pixel size from meters to degrees
-    pixel_size_degrees_lat = pixel_size_meters / 111320  # approximately 1 degree of latitude is equal to 111,320 meters
-    pixel_size_degrees_lon = pixel_size_meters / (111320 * math.cos(math.radians(lat)))  # adjust for latitude
+    pixel_size_degrees_lat = pixel_size_meters / 111320.0  # approximately 1 degree of latitude is equal to 111,320 meters
+    pixel_size_degrees_lon = pixel_size_meters / (111320.0 * math.cos(math.radians(lat)))  # adjust for latitude
 
     # Calculate the new latitude and longitude
-    new_lat = lat + pixels_north * pixel_size_degrees_lat
-    new_lon = lon + pixels_east * pixel_size_degrees_lon
+    new_lat = lat + (pixels_north * pixel_size_degrees_lat)
+    new_lon = lon + (pixels_east * pixel_size_degrees_lon)
 
     return new_lat, new_lon
 
