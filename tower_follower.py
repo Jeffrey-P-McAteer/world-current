@@ -77,7 +77,7 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         box_pixels_center = so_funcs.center_of_bbox(*xyxy)
         north_pixels_from_center = -1 * (box_pixels_center[0] - center_y) # laty, negative b/c latitude is the opposite direction of screen coordinates
         east_pixels_from_center = box_pixels_center[1] - center_x # lonx
-        box_gis_center = so_funcs.add_pixels_to_coordinates(laty, lonx, -north_pixels_from_center, -east_pixels_from_center)
+        box_gis_center = so_funcs.add_pixels_to_coordinates(laty, lonx, -north_pixels_from_center, east_pixels_from_center)
 
         so_funcs.draw_text_with_border(
             drawable, box_pixels_center,
@@ -104,7 +104,7 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
         north_pixels_from_center = -1 * (box_pixels_center[0] - center_y) # laty, negative b/c latitude is the opposite direction of screen coordinates
         east_pixels_from_center = box_pixels_center[1] - center_x # lonx
 
-        box_gis_laty, box_gis_lonx = so_funcs.add_pixels_to_coordinates(laty, lonx, -north_pixels_from_center, -east_pixels_from_center)
+        box_gis_laty, box_gis_lonx = so_funcs.add_pixels_to_coordinates(laty, lonx, -north_pixels_from_center, east_pixels_from_center)
 
         num_towers_processed += follow_towers(
             config, i, j+num_towers_processed+1, i_folder, box_gis_lonx, box_gis_laty, already_processed_xys,
