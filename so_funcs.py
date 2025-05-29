@@ -26,29 +26,52 @@ def pt_dist(p1, p2):
         ((p1[0] - p2[0])**2.0) + ((p1[1] - p2[1])**2.0)
     )
 
-def pixel_size(zoom, tile_size=256):
-    n = 2 ** zoom
-    lon_size = 360.0 / n / tile_size
-    lat_size = (math.atan(math.sinh(math.pi * (1 - 2 * (tile_size - 1) / n))) - 
-                math.atan(math.sinh(math.pi * (1 - 2 * tile_size / n)))) / tile_size
-    lat_size = math.degrees(lat_size)
-    return lon_size, lat_size
+def add_pixels_to_coordinates(lat, lon, pixels_north, pixels_east):
+    """
+    Add pixels to lat, lon coordinates and return the new lat, lon coordinates.
 
-PX_SCALE_FACTOR = 0.0008
+    Parameters:
+    lat (float): The latitude in decimal degrees.
+    lon (float): The longitude in decimal degrees.
+    pixels_north (int): The number of pixels to add in the north direction.
+    pixels_east (int): The number of pixels to add in the east direction.
 
-def pixel_to_lonx_laty(x, y, image_width, image_height, zoom, center_laty, center_lonx):
-    px2lon, px2lat = pixel_size(zoom)
-    px2lon *= PX_SCALE_FACTOR # PX_SCALE_FACTOR is arbitrary scaling to get images closer
-    px2lat *= PX_SCALE_FACTOR
-    return center_lonx + (px2lon * (x - (image_width/2.0))), center_laty + (-1.0 * px2lat * (y - (image_height/2.0)))
+    Returns:
+    tuple: A tuple containing the new latitude and longitude in decimal degrees.
+    """
+    # Define the pixel size in meters
+    pixel_size_meters = 0.378320231692
 
-def latlon_to_pixel(laty, lonx, image_width, image_height, zoom, center_laty, center_lonx):
-    px2lon, px2lat = pixel_size(zoom)
-    delta_laty = center_laty - laty
-    delta_lonx = center_lonx - lonx
-    delta_pixels_y = (delta_laty / px2lat) * PX_SCALE_FACTOR # PX_SCALE_FACTOR is arbitrary scaling to get images closer
-    delta_pixels_x = (delta_lonx / px2lon) * PX_SCALE_FACTOR
-    return int(delta_pixels_x + (image_width / 2)), int(delta_pixels_y + (image_height / 2))
+    # Convert the pixel size from meters to degrees
+    pixel_size_degrees_lat = pixel_size_meters / 111320  # approximately 1 degree of latitude is equal to 111,320 meters
+    pixel_size_degrees_lon = pixel_size_meters / (111320 * math.cos(math.radians(lat)))  # adjust for latitude
+
+    # Calculate the new latitude and longitude
+    new_lat = lat + pixels_north * pixel_size_degrees_lat
+    new_lon = lon + pixels_east * pixel_size_degrees_lon
+
+    return new_lat, new_lon
+
+# def pixel_size(zoom, tile_size=256):
+#     n = 2 ** zoom
+#     lon_size = 360.0 / n / tile_size
+#     lat_size = (math.atan(math.sinh(math.pi * (1 - 2 * (tile_size - 1) / n))) - 
+#                 math.atan(math.sinh(math.pi * (1 - 2 * tile_size / n)))) / tile_size
+#     lat_size = math.degrees(lat_size)
+#     return lon_size, lat_size
+
+# def pixel_to_lonx_laty(x, y, image_width, image_height, zoom, center_laty, center_lonx):
+#     px2lon, px2lat = pixel_size(zoom)
+#     return center_lonx + (px2lon * (x - (image_width/2.0))), center_laty + (-1.0 * px2lat * (y - (image_height/2.0)))
+
+# # Broken to hell and back, do not use this math
+# def latlon_to_pixel(laty, lonx, image_width, image_height, zoom, center_laty, center_lonx):
+#     px2lon, px2lat = pixel_size(zoom)
+#     delta_laty = center_laty - laty
+#     delta_lonx = center_lonx - lonx
+#     delta_pixels_y = (delta_laty / px2lat)
+#     delta_pixels_x = (delta_lonx / px2lon)
+#     return int(delta_pixels_x + (image_width / 2)), int(delta_pixels_y + (image_height / 2))
 
 def brightness(color):
     # Convert color name or hex to RGB tuple

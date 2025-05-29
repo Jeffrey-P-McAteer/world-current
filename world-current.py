@@ -228,7 +228,7 @@ if __name__ == '__main__':
   power_plant_images = [None for p in region_power_plants]
 
   def render_one(i, p):
-    image = location_chipper.get_1km_chip_image(
+    image = location_chipper.get_area_chip_image(
       so_funcs.get_lonx_from_dict(p), so_funcs.get_laty_from_dict(p)
     )
     power_plant_images[i] = image

@@ -11,6 +11,11 @@ import PIL
 import so_funcs
 import location_chipper
 
+# Measured in GIMP using image at zoom level 18 at -110.307589, 31.5964 (Tri-bar satellite calibration target at Fort Huachuca)
+measured_bar_lengths_px = (401.2 + 398.7 + 408.6) / 3.0
+PIXEL_WIDTH_METERS = 152.4 / measured_bar_lengths_px
+# print(f'At zoom {ZOOM} level each pixel is {round(pixel_width_meters, 3)} meters wide')
+
 def have_processed(list_of_xy, lonx, laty):
     equality_epsilon = 0.000001
     for x,y in list_of_xy:
@@ -32,9 +37,9 @@ def follow_towers(config, i, j, i_folder, lonx, laty, already_processed_xys, yol
     #tower_following_out_png = os.path.join(i_folder, f'{j}.png')
     tower_following_out_png = next_nonexisting(i_folder, lambda n:  f'{n}.png')
     print(f'Writing tower-following results to {tower_following_out_png}')
-    print(f'Calling get_1km_chip_image({lonx}, {laty})')
+    print(f'Calling get_area_chip_image({lonx}, {laty})')
     try:
-        pil_image = location_chipper.get_1km_chip_image(
+        pil_image = location_chipper.get_area_chip_image(
             lonx, laty
         )
     except:
