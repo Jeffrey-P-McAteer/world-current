@@ -66,7 +66,7 @@ def find_best_kernel(image_input, image_target, num_kernels):
             best_loss = loss.item()
             best_kernel = kernel.detach().cpu()
 
-        print(f'Finished kernel {i}/{num_kernels}')
+        print(f'Finished kernel {i}/{num_kernels} best_loss={best_loss}')
 
     return best_kernel, best_loss
 
