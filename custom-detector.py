@@ -252,7 +252,8 @@ if __name__ == '__main__':
         font,
         '#ffffff',
       )
-      labeled_image.save(out_png)
+      #labeled_image.save(out_png)
+      image.save(out_png)
       print(f'Output {out_png}')
   else:
     print(f'Did not find a key step2_facility_chips_folder in config, skipping chips preview')

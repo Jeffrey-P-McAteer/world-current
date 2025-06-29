@@ -11,6 +11,8 @@
 #   "numpy",
 #   "torch",
 #   "torchvision",
+#   "matplotlib",
+#   "opencv-python",
 # ]
 # ///
 
@@ -29,8 +31,8 @@ import numpy as np
 import os
 
 # Config
-KERNEL_SIZE = 3
-NUM_KERNELS = 5000
+KERNEL_SIZE = 9
+NUM_KERNELS = 51000
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Load and preprocess images
@@ -87,13 +89,19 @@ def main():
     print("Finding best kernel...")
     best_kernel, best_loss = find_best_kernel(image_input, image_target, NUM_KERNELS)
 
-    print("Best kernel (9x9):")
+    print(f"Best kernel ({KERNEL_SIZE}x{KERNEL_SIZE}):")
     print(best_kernel.numpy())
     print(f"Loss: {best_loss:.6f}")
 
+    with open('/tmp/best-kernel.txt', 'w') as fd:
+        fd.write(f"Best kernel ({KERNEL_SIZE}x{KERNEL_SIZE}):\n")
+        fd.write(f'{best_kernel.numpy()}\n')
+        fd.write(f"Loss: {best_loss:.6f}\n")
+
     # Write best output to /tmp/out.png
+    best_kernel_device = best_kernel.to(image_input.device)
     out_file_path = '/tmp/out.png'
-    best_output = apply_kernel(image_input, best_kernel).squeeze(0).detach().cpu() # shape: [H, W]
+    best_output = apply_kernel(image_input, best_kernel_device).squeeze(0).detach().cpu() # shape: [H, W]
     # Normalize for saving (min-max normalization to [0, 1])
     output_min, output_max = best_output.min(), best_output.max()
     normalized_output = (best_output - output_min) / (output_max - output_min + 1e-8)
