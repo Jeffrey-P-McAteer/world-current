@@ -24,100 +24,88 @@ goal_img_path = sys.argv[2]
 
 import torch
 import torch.nn.functional as F
-from torchvision import transforms
-from torchvision.utils import save_image
-from PIL import Image
+import cv2
 import numpy as np
-import os
+import matplotlib.pyplot as plt
 
-# Config
-KERNEL_SIZE = 9
-NUM_KERNELS = 51000
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+def load_grayscale_tensor(path, device):
+    img = cv2.imread(path, cv2.IMREAD_GRAYSCALE).astype(np.float32) / 255.0
+    tensor = torch.from_numpy(img).unsqueeze(0).unsqueeze(0)  # shape: (1, 1, H, W)
+    return tensor.to(device)
 
-# Load and preprocess images
-def load_image(path):
-    image = Image.open(path).convert('L')  # Convert to grayscale
-    transform = transforms.Compose([
-        transforms.ToTensor(),  # Converts to shape [1, H, W], values in [0, 1]
-    ])
-    return transform(image).to(DEVICE)
+def optimize_kernel(image, target, kernel_size=5, iterations=200, lr=0.1):
+    device = image.device
 
-# Convolve image with a 9x9 kernel
-def apply_kernel(image, kernel):
-    kernel = kernel.view(1, 1, KERNEL_SIZE, KERNEL_SIZE)
-    return F.conv2d(image.unsqueeze(0), kernel, padding=KERNEL_SIZE // 2)
+    # Initialize kernel as a trainable parameter
+    kernel = torch.randn((1, 1, kernel_size, kernel_size), device=device, requires_grad=True)
 
-# Evaluation metric: MSE loss
-def loss_fn(predicted, target):
-    return F.mse_loss(predicted, target)
+    optimizer = torch.optim.Adam([kernel], lr=lr)
 
-# Find the best kernel from random ones
-def find_best_kernel(image_input, image_target, num_kernels):
-    best_loss = float('inf')
-    best_kernel = None
+    for it in range(iterations):
+        optimizer.zero_grad()
+        output = F.conv2d(image, kernel, padding=kernel_size // 2)
+        loss = F.mse_loss(output, target)
+        loss.backward()
+        optimizer.step()
 
-    for i in range(num_kernels):
-        kernel = torch.randn(KERNEL_SIZE, KERNEL_SIZE, device=DEVICE, requires_grad=False)
-        kernel = kernel / kernel.abs().sum()  # Normalize kernel
+        if it % 10 == 0:
+            print(f"Iteration {it}, Loss: {loss.item():.6f}")
 
-        output = apply_kernel(image_input, kernel)
-        loss = loss_fn(output, image_target)
+    return kernel.detach().cpu().squeeze().numpy(), output.detach().cpu().squeeze().numpy()
 
-        if loss < best_loss:
-            best_loss = loss.item()
-            best_kernel = kernel.detach().cpu()
-
-        print(f'Finished kernel {i}/{num_kernels} best_loss={best_loss}')
-
-    return best_kernel, best_loss
-
-# === Main ===
 def main():
-    # Replace with your image paths
-    path_input = features_img_path
-    path_target = goal_img_path
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
 
-    if not os.path.exists(path_input) or not os.path.exists(path_target):
-        print("Please place 'input.png' and 'target.png' in the current directory.")
-        return
+    image_path = features_img_path
+    mask_path = goal_img_path
 
-    image_input = load_image(path_input)
-    image_target = load_image(path_target)
-    image_target = image_target.unsqueeze(0)  # shape becomes [1, 1, H, W]
+    image = load_grayscale_tensor(image_path, device)
+    mask = load_grayscale_tensor(mask_path, device)
 
-    print("Finding best kernel...")
-    best_kernel, best_loss = find_best_kernel(image_input, image_target, NUM_KERNELS)
+    # Ensure mask is binary
+    mask = (mask > 0.5).float()
 
-    print(f"Best kernel ({KERNEL_SIZE}x{KERNEL_SIZE}):")
-    print(best_kernel.numpy())
-    print(f"Loss: {best_loss:.6f}")
+    kernel, output = optimize_kernel(
+        image, mask,
+        kernel_size=9,
+        iterations=25000,
+        lr=0.02
+    )
 
-    with open('/tmp/best-kernel.txt', 'w') as fd:
-        fd.write(f"Best kernel ({KERNEL_SIZE}x{KERNEL_SIZE}):\n")
-        fd.write(f'{best_kernel.numpy()}\n')
-        fd.write(f"Loss: {best_loss:.6f}\n")
+    # Display results
+    image_np = image.cpu().squeeze().numpy()
+    mask_np = mask.cpu().squeeze().numpy()
 
-    # Write best output to /tmp/out.png
-    best_kernel_device = best_kernel.to(image_input.device)
-    out_file_path = '/tmp/out.png'
-    best_output = apply_kernel(image_input, best_kernel_device).squeeze(0).detach().cpu() # shape: [H, W]
-    # Normalize for saving (min-max normalization to [0, 1])
-    output_min, output_max = best_output.min(), best_output.max()
-    normalized_output = (best_output - output_min) / (output_max - output_min + 1e-8)
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 3, 1)
+    plt.title('Original')
+    plt.imshow(image_np, cmap='gray')
+    plt.axis('off')
 
-    save_image(normalized_output.unsqueeze(0), "/tmp/out.norm.png")
-    save_image(best_output.unsqueeze(0), "/tmp/out.png")
+    plt.subplot(1, 3, 2)
+    plt.title('Target Mask')
+    plt.imshow(mask_np, cmap='gray')
+    plt.axis('off')
+
+    plt.subplot(1, 3, 3)
+    plt.title('Convolved Output')
+    plt.imshow(output, cmap='gray')
+    plt.axis('off')
+
+    plt.tight_layout()
+    plt.savefig("/tmp/result.png", dpi=400)
+
+    print("Learned Kernel:")
+    print(kernel)
+    with open('/tmp/result.txt', 'w') as fd:
+        fd.write(f'Learned Kernel:\n{kernel}\n')
+
+    print(f'See /tmp/result.png and /tmp/result.txt')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
-
-
-
-
-
-
 
 
 
