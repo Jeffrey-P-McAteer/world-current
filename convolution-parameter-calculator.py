@@ -49,7 +49,7 @@ def optimize_kernel(image, target, kernel_size=5, iterations=200, lr=0.1):
         optimizer.step()
 
         if it % 10 == 0:
-            print(f"Iteration {it}, Loss: {loss.item():.6f}")
+            print(f"Iteration {it}/{iterations}, Loss: {loss.item():.6f}")
 
     return kernel.detach().cpu().squeeze().numpy(), output.detach().cpu().squeeze().numpy()
 
