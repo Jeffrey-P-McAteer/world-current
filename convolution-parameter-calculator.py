@@ -30,7 +30,7 @@ import os
 
 # Config
 KERNEL_SIZE = 9
-NUM_KERNELS = 100
+NUM_KERNELS = 500
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Load and preprocess images
@@ -82,6 +82,7 @@ def main():
 
     image_input = load_image(path_input)
     image_target = load_image(path_target)
+    image_target = image_target.unsqueeze(0)  # shape becomes [1, 1, H, W]
 
     print("Finding best kernel...")
     best_kernel, best_loss = find_best_kernel(image_input, image_target, NUM_KERNELS)
