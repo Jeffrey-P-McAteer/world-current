@@ -68,9 +68,9 @@ def main():
 
     kernel, output = optimize_kernel(
         image, mask,
-        kernel_size=9,
+        kernel_size=5,
         iterations=25000,
-        lr=0.02
+        lr=0.01
     )
 
     # Display results
