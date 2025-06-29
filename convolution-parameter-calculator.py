@@ -29,8 +29,8 @@ import numpy as np
 import os
 
 # Config
-KERNEL_SIZE = 9
-NUM_KERNELS = 500
+KERNEL_SIZE = 3
+NUM_KERNELS = 5000
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Load and preprocess images
@@ -98,7 +98,8 @@ def main():
     output_min, output_max = best_output.min(), best_output.max()
     normalized_output = (best_output - output_min) / (output_max - output_min + 1e-8)
 
-    save_image(normalized_output.unsqueeze(0), "/tmp/out.png")
+    save_image(normalized_output.unsqueeze(0), "/tmp/out.norm.png")
+    save_image(best_output.unsqueeze(0), "/tmp/out.png")
 
 
 if __name__ == "__main__":
